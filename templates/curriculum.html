@@ -1,32 +1,32 @@
 {% extends 'base.html' %}
 {% block title %}Curriculum | Salesforce Project Group{% endblock %}
 {% block content %}
-<section class="page-header curriculum-header">
-  <span class="eyebrow">Eight-week curriculum</span>
-  <h1>Build the thinking you will need in a Salesforce interview.</h1>
-  <p>Each week teaches a professional skill, gives a step-by-step study path, requires evidence, and connects the work to a real interview question.</p>
+<div class="page-head">
+  <div><span class="eyebrow">8-week program</span><h1>A clear path from project to interview.</h1><p>Each week has one purpose, a guided study sequence, required evidence, and an interview connection.</p></div>
+  {% if current_user.role == 'student' %}<a class="button button-secondary" href="{{ url_for('student_dashboard') }}">Return to my progress</a>{% endif %}
+</div>
+
+<section class="card program-overview">
+  <div><h2>Use the same routine every week</h2><p>Learn the skill, complete the guided steps, check the quality gate, and submit the evidence for instructor feedback.</p></div>
+  <div class="program-stat"><strong>8 weeks</strong><span>4 simple phases</span></div>
 </section>
 
-<section class="curriculum-principles">
-  <article><strong>01</strong><h2>Understand</h2><p>Clarify the business problem, users, scope, constraints, and success criteria.</p></article>
-  <article><strong>02</strong><h2>Research</h2><p>Use credible evidence, compare options, and justify recommendations.</p></article>
-  <article><strong>03</strong><h2>Design</h2><p>Reason about data, security, automation, integration, quality, and delivery before building.</p></article>
-  <article><strong>04</strong><h2>Present and defend</h2><p>Explain the project clearly, answer follow-ups, and represent your experience honestly.</p></article>
-</section>
-
-<section class="curriculum-list">
-  {% for week in weeks %}
-    {% set item = by_week.get(week.number) if current_user.role == 'student' else none %}
-    <a class="curriculum-card" href="{% if current_user.role == 'student' %}{{ url_for('student_week', week_number=week.number) }}{% else %}{{ url_for('curriculum_week', week_number=week.number) }}{% endif %}">
-      <div class="curriculum-number">{{ '%02d'|format(week.number) }}</div>
-      <div class="curriculum-copy"><span>{{ week.phase }}</span><h2>{{ week.title }}</h2><p>{{ week.focus }}</p><small>{{ week.steps|length }} study steps · {{ week.estimated_time }} · Interview: {{ week.interview }}</small></div>
-      {% if current_user.role == 'student' %}<span class="status-pill {{ item.status if item else 'not-started' }}">{{ (item.status|replace('_',' ')|title) if item else 'Not started' }}</span>{% else %}<span class="open-arrow">→</span>{% endif %}
-    </a>
+<div class="phase-stack">
+  {% for phase in program_phases %}
+  <section class="card phase-block">
+    <div class="phase-head"><span class="phase-number">{{ phase.number }}</span><div><span class="eyebrow">Phase {{ phase.number }}</span><h2>{{ phase.title }}</h2><p>{{ phase.description }}</p></div></div>
+    <div class="phase-weeks">
+      {% for week_number in phase.weeks %}
+        {% set week = weeks[week_number - 1] %}
+        {% set item = by_week.get(week.number) if by_week else none %}
+        <a class="curriculum-card" href="{{ url_for('student_week', week_number=week.number) if current_user.role == 'student' else url_for('curriculum_week', week_number=week.number) }}">
+          <span class="week-no">{{ '%02d'|format(week.number) }}</span>
+          <span><strong>{{ week.title }}</strong><small>{{ week.estimated_time }} · {{ week.steps|length }} steps</small></span>
+          {% if current_user.role == 'student' %}<span class="status-pill {{ item.status if item else 'not-started' }}">{{ (item.status|replace('_',' ')|title) if item else 'Not started' }}</span>{% else %}<span class="arrow">→</span>{% endif %}
+        </a>
+      {% endfor %}
+    </div>
+  </section>
   {% endfor %}
-</section>
-
-<section class="section rubric-summary">
-  <div class="section-heading"><span class="eyebrow">Consistent grading</span><h2>Every week is evaluated with the same professional rubric.</h2><p>This helps students see whether the problem is understanding, reasoning, Salesforce application, communication, or completeness.</p></div>
-  <div class="rubric-grid">{% for item in rubric %}<article><span>{{ item.max_score }} points</span><h3>{{ item.label }}</h3><p>{{ item.description }}</p></article>{% endfor %}</div>
-</section>
+</div>
 {% endblock %}

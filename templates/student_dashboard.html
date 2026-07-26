@@ -1,23 +1,38 @@
 {% extends 'base.html' %}
+{% block title %}My learning | Salesforce Project Group{% endblock %}
 {% block content %}
-<section class="dashboard-header">
-  <div><span class="eyebrow">Student workspace</span><h1>Build the story you will defend in an interview.</h1><p>Use the guided study steps, submit evidence, and revise the work using instructor feedback.</p></div>
-  <div class="progress-ring"><strong>{{ approved }}/8</strong><span>approved</span></div>
+<div class="welcome-grid">
+  <section class="card welcome-card">
+    <div><span class="eyebrow" style="color:#e59b7f">Student workspace</span><h1>Build one strong Salesforce story, week by week.</h1><p>Your next step is always shown here. Complete the guide, submit your evidence, and use instructor feedback to improve.</p></div>
+    <a class="button" href="{{ url_for('student_week', week_number=next_week or 8) }}">{% if next_week %}Continue Week {{ next_week }}{% else %}Review completed program{% endif %}</a>
+  </section>
+  <section class="card next-card">
+    {% if next_week %}
+      {% set next = weeks[next_week - 1] %}
+      <span class="week-circle">{{ '%02d'|format(next_week) }}</span>
+      <span class="eyebrow">Next step</span>
+      <h2>{{ next.title }}</h2>
+      <p>{{ next.focus }}</p>
+      <a class="text-link" href="{{ url_for('student_week', week_number=next_week) }}">Open weekly workspace →</a>
+    {% else %}
+      <span class="week-circle">✓</span><span class="eyebrow">Program complete</span><h2>All eight weeks are approved.</h2><p>Use the completed work to prepare for interviews and continue practicing your final story.</p>
+    {% endif %}
+  </section>
+</div>
+
+<section class="metric-grid">
+  <div class="card metric-card"><strong>{{ approved }}/8</strong><span>weeks approved</span></div>
+  <div class="card metric-card"><strong>{{ submitted }}</strong><span>weeks submitted</span></div>
+  <div class="card metric-card"><strong>{{ average_score if average_score is not none else '—' }}</strong><span>approved average score</span></div>
 </section>
-<section class="metric-row four">
-  <div><strong>{{ submitted }}</strong><span>weeks submitted</span></div>
-  <div><strong>{{ approved }}</strong><span>weeks approved</span></div>
-  <div><strong>{{ average_score if average_score is not none else '—' }}</strong><span>approved average</span></div>
-  {% if next_week %}<a href="{{ url_for('student_week', week_number=next_week) }}"><strong>{{ '%02d'|format(next_week) }}</strong><span>continue next week →</span></a>{% else %}<div><strong>✓</strong><span>program complete</span></div>{% endif %}
-</section>
-<section class="student-actions"><a class="button" href="{{ url_for('curriculum') }}">Open full curriculum</a><a class="button button-quiet" href="{{ url_for('samples') }}">Review presentation samples</a></section>
-<section class="week-list">
+
+<div class="section-row"><div><h2>Your 8-week roadmap</h2><p>Open any week to view the guide, submission, score, and feedback.</p></div><a class="text-link" href="{{ url_for('curriculum') }}">View full curriculum →</a></div>
+<section class="week-roadmap">
   {% for week in weeks %}
     {% set item = by_week.get(week.number) %}
-    <a class="week-row" href="{{ url_for('student_week', week_number=week.number) }}">
-      <span class="week-index">{{ '%02d'|format(week.number) }}</span>
-      <span class="week-main"><small>{{ week.phase }}</small><strong>{{ week.title }}</strong><em>{{ week.steps|length }} guided steps · {{ week.interview }}</em></span>
-      <span class="week-score">{% if item and item.total_score is not none %}<strong>{{ item.total_score|round(1) }}</strong><small>/100</small>{% endif %}</span>
+    <a class="roadmap-item" href="{{ url_for('student_week', week_number=week.number) }}">
+      <span class="roadmap-index">{{ '%02d'|format(week.number) }}</span>
+      <span class="roadmap-copy"><small>{{ week.phase }}</small><strong>{{ week.title }}</strong><span>{{ week.interview }}</span></span>
       <span class="status-pill {{ item.status if item else 'not-started' }}">{{ (item.status|replace('_',' ')|title) if item else 'Not started' }}</span>
     </a>
   {% endfor %}

@@ -1,14 +1,20 @@
 {% extends 'base.html' %}
-{% block title %}Presentation Samples | Salesforce Project Group{% endblock %}
+{% block title %}Examples | Salesforce Project Group{% endblock %}
+{% block public_content %}{% if not current_user %}<section class="public-section"><div class="public-section-head"><span class="eyebrow">Model work</span><h2>Study two strong examples.</h2><p>One example shows how to present a complete Salesforce project. The other shows how to explain a research topic simply.</p></div>{% endif %}
 {% block content %}
-<section class="page-header"><span class="eyebrow">Presentation library</span><h1>Two improved examples. Two different skills.</h1><p>Use these to study structure, visual hierarchy, explanation, and professional storytelling. Do not copy the business content.</p></section>
-<section class="section sample-detail-grid">
+{% if current_user %}<div class="page-head"><div><span class="eyebrow">Model work</span><h1>Two examples are enough.</h1><p>Study the structure and reasoning. Do not copy the wording.</p></div></div>{% endif %}
+<div class="sample-grid">
   {% for key, sample in samples.items() %}
-  <article class="sample-detail" id="{{ key }}">
-    <div class="sample-type">{{ sample.kind }}</div><h2>{{ sample.title }}</h2><p>{{ sample.description }}</p>
-    <h3>What to study</h3><ul class="check-list">{% for lesson in sample.lessons %}<li>{{ lesson }}</li>{% endfor %}</ul>
-    <a class="button" href="{{ url_for('download_sample', sample_key=key) }}">Download improved PowerPoint</a>
+  <article class="card sample-card">
+    <div class="sample-icon">{% if key == 'project' %}SF{% else %}R{% endif %}</div>
+    <span class="eyebrow">{{ sample.kind }}</span>
+    <h2>{{ sample.title }}</h2>
+    <p>{{ sample.description }}</p>
+    <ul class="sample-lessons">{% for lesson in sample.lessons %}<li>{{ lesson }}</li>{% endfor %}</ul>
+    <a class="button button-secondary" href="{{ url_for('download_sample', sample_key=key) }}">Download presentation</a>
   </article>
   {% endfor %}
-</section>
+</div>
+{% if not current_user %}</section>{% endif %}
+{% endblock %}
 {% endblock %}

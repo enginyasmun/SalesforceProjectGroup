@@ -1,15 +1,15 @@
 import os
 import sys
 
-os.environ['SECRET_KEY'] = 'PASTE_A_LONG_RANDOM_SECRET'
+os.environ['SECRET_KEY'] = 'KEEP_THE_EXISTING_LONG_RANDOM_SECRET'
 os.environ['ADMIN_NAME'] = 'Engin Yasmun'
-os.environ['ADMIN_EMAIL'] = 'YOUR_ADMIN_EMAIL'
-os.environ['ADMIN_PASSWORD'] = 'YOUR_TEMPORARY_ADMIN_PASSWORD'
-os.environ['PROJECT_GROUP_DATABASE'] = '/home/YOUR_USERNAME/project-group-data/project_group.db'
-os.environ['PROJECT_GROUP_UPLOADS'] = '/home/YOUR_USERNAME/project-group-data/uploads'
+os.environ['ADMIN_EMAIL'] = 'KEEP_YOUR_EXISTING_ADMIN_EMAIL'
+os.environ['ADMIN_PASSWORD'] = 'KEEP_YOUR_EXISTING_ADMIN_PASSWORD'
+os.environ['PROJECT_GROUP_DATABASE'] = '/home/enginproject/project-group-data/project_group.db'
+os.environ['PROJECT_GROUP_UPLOADS'] = '/home/enginproject/project-group-data/uploads'
 os.environ['COOKIE_SECURE'] = '1'
 
-path = '/home/YOUR_USERNAME/LearningPortal/project_group_portal'
+path = '/home/enginproject/SalesforceProjectGroup'
 if path not in sys.path:
     sys.path.insert(0, path)
 

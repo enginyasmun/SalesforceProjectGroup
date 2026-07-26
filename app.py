@@ -33,6 +33,33 @@ app.config["SESSION_COOKIE_SECURE"] = os.environ.get("COOKIE_SECURE", "0") == "1
 PASSWORD_ITERATIONS = 260_000
 ALLOWED_EXTENSIONS = {"pdf", "doc", "docx", "ppt", "pptx", "txt", "md", "png", "jpg", "jpeg", "zip"}
 WEEKS = CURRICULUM
+PROGRAM_PHASES = [
+    {
+        "number": 1,
+        "title": "Build the project story",
+        "description": "Position the bootcamp experience honestly, understand the business need, and translate it into Salesforce requirements.",
+        "weeks": [1, 2, 3],
+    },
+    {
+        "number": 2,
+        "title": "Research before deciding",
+        "description": "Learn how to find reliable Salesforce information, compare options, and make an evidence-based recommendation.",
+        "weeks": [4],
+    },
+    {
+        "number": 3,
+        "title": "Design a defensible solution",
+        "description": "Plan the data, security, automation, testing, deployment, and risk approach before building.",
+        "weeks": [5, 6],
+    },
+    {
+        "number": 4,
+        "title": "Present and defend",
+        "description": "Turn the work into a clear presentation and answer interview questions with specific ownership and reasoning.",
+        "weeks": [7, 8],
+    },
+]
+APP_VERSION = "3.0"
 _SCHEMA_READY = False
 
 SAMPLES = {
@@ -213,6 +240,7 @@ def inject_globals():
         "csrf_token": csrf_token(),
         "weeks": WEEKS,
         "rubric": RUBRIC,
+        "program_phases": PROGRAM_PHASES,
         "current_year": date.today().year,
     }
 
@@ -286,7 +314,7 @@ def allowed_file(filename):
 @app.route("/health")
 def health():
     database_ready = bool(query_one("SELECT name FROM sqlite_master WHERE type='table' AND name='users'"))
-    return jsonify({"status": "ok", "database": "ready" if database_ready else "missing"})
+    return jsonify({"status": "ok", "database": "ready" if database_ready else "missing", "version": APP_VERSION})
 
 
 @app.route("/")

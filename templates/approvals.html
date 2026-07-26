@@ -1,7 +1,26 @@
 {% extends 'base.html' %}
+{% block title %}Approvals | Salesforce Project Group{% endblock %}
 {% block content %}
-<section class="page-header"><span class="eyebrow">Registration approvals</span><h1>Students who selected you.</h1><p>Review the student’s bootcamp and identity information before granting access.</p></section>
-<div class="approval-grid">
-{% for student in students %}<article class="approval-card"><div><span class="status-pill pending">Pending</span><h2>{{ student.name }}</h2><a href="mailto:{{ student.email }}">{{ student.email }}</a></div><dl><dt>Bootcamp</dt><dd>{{ student.bootcamp_name or 'Not provided' }}</dd><dt>Graduation</dt><dd>{{ student.graduation_date or 'Not provided' }}</dd><dt>Selected instructor</dt><dd>{{ student.instructor_name or 'Not assigned' }}</dd></dl>{% if student.linkedin_url %}<a class="text-link" href="{{ student.linkedin_url }}" target="_blank" rel="noopener">Open LinkedIn →</a>{% endif %}<form method="post" action="{{ url_for('registration_decision', student_id=student.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="button button-quiet" name="decision" value="rejected">Reject</button><button class="button" name="decision" value="approved">Approve</button></form></article>{% else %}<div class="empty-state">No student registrations are waiting for your approval.</div>{% endfor %}
-</div>
+<div class="page-head"><div><span class="eyebrow">New registrations</span><h1>Approve the right students.</h1><p>Non-admin instructors see only students who selected them during registration.</p></div></div>
+<section class="approval-grid">
+  {% for student in students %}
+  <article class="card approval-card">
+    <div class="card-head"><div><span class="eyebrow">Pending student</span><h2>{{ student.name }}</h2><p>{{ student.email }}</p></div><span class="status-pill pending">Pending</span></div>
+    <div class="approval-meta">
+      <div><span>Bootcamp</span><strong>{{ student.bootcamp_name or 'Not provided' }}</strong></div>
+      <div><span>Graduation</span><strong>{{ student.graduation_date or 'Not provided' }}</strong></div>
+      <div><span>Selected instructor</span><strong>{{ student.instructor_name or 'Not assigned' }}</strong></div>
+      <div><span>Registered</span><strong>{{ student.created_at[:10] }}</strong></div>
+    </div>
+    {% if student.linkedin_url %}<a class="text-link" target="_blank" rel="noopener" href="{{ student.linkedin_url }}">Open LinkedIn profile →</a>{% endif %}
+    <form class="approval-actions" method="post" action="{{ url_for('registration_decision', student_id=student.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <button class="button button-danger" type="submit" name="decision" value="rejected" data-confirm="Reject this registration?">Reject</button>
+      <button class="button button-primary" type="submit" name="decision" value="approved">Approve student</button>
+    </form>
+  </article>
+  {% else %}
+  <div class="card empty-state" style="grid-column:1/-1"><div class="empty-icon">✓</div><h2>No approvals waiting.</h2><p>New registrations will appear here after students select an instructor.</p></div>
+  {% endfor %}
+</section>
 {% endblock %}

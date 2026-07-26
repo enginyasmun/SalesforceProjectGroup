@@ -1,12 +1,19 @@
 {% extends 'base.html' %}
+{% block title %}Account status | Salesforce Project Group{% endblock %}
 {% block content %}
-<section class="status-page">
-  <div class="status-icon">…</div>
+<section class="card status-page">
   {% if user.approval_status == 'rejected' %}
-    <span class="eyebrow">Registration decision</span><h1>Your registration was not approved.</h1><p>Contact the program administrator or your selected instructor for more information.</p>
+    <div class="status-icon">!</div>
+    <span class="eyebrow">Registration status</span>
+    <h1>Your application was not approved.</h1>
+    <p>Contact the selected instructor or the program administrator for more information.</p>
   {% else %}
-    <span class="eyebrow">Approval pending</span><h1>Your registration is with {{ instructor.name if instructor else 'the academy team' }}.</h1><p>You can sign in, but the eight-week workspace will open only after approval.</p>
+    <div class="status-icon">⌛</div>
+    <span class="eyebrow">Registration received</span>
+    <h1>Your account is waiting for approval.</h1>
+    <p>{% if instructor %}{{ instructor.name }} must approve the account before you can open the student curriculum.{% else %}An instructor must approve the account before access begins.{% endif %}</p>
   {% endif %}
-  <a class="button button-quiet" href="{{ url_for('logout') }}">Sign out</a>
+  {% if instructor and instructor.email %}<p><a class="text-link" href="mailto:{{ instructor.email }}">Contact {{ instructor.name }}</a></p>{% endif %}
+  <a class="button button-secondary" href="{{ url_for('account') }}">Review account details</a>
 </section>
 {% endblock %}

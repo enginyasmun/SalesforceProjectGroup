@@ -1,20 +1,23 @@
 {% extends 'base.html' %}
-{% block title %}{{ student.name }} Progress | Salesforce Project Group{% endblock %}
+{% block title %}{{ student.name }} | Salesforce Project Group{% endblock %}
 {% block content %}
 <a class="breadcrumb" href="{{ url_for('instructor_students') }}">← Back to students</a>
-<section class="student-profile-header">
-  <div><span class="eyebrow">Student progress</span><h1>{{ student.name }}</h1><p>{{ student.email }} · {{ student.bootcamp_name or 'Bootcamp not provided' }} · Instructor: {{ student.instructor_name or 'Not assigned' }}</p>{% if student.linkedin_url %}<a class="text-link" href="{{ student.linkedin_url }}" target="_blank" rel="noopener">Open LinkedIn profile →</a>{% endif %}</div>
-  <div class="profile-score"><strong>{{ average_score if average_score is not none else '—' }}</strong><span>approved average</span></div>
+<section class="card profile-summary">
+  <div class="profile-person"><span class="user-avatar">{{ student.name[:1]|upper }}</span><div><h1>{{ student.name }}</h1><p>{{ student.email }} · {{ student.bootcamp_name or 'Bootcamp not provided' }}</p></div></div>
+  <div class="profile-stat"><strong>{{ by_week|length }}</strong><span>weeks started</span></div>
+  <div class="profile-stat"><strong>{{ by_week.values()|selectattr('status','equalto','approved')|list|length }}</strong><span>weeks approved</span></div>
+  <div class="profile-stat"><strong>{{ average_score if average_score is not none else '—' }}</strong><span>average score</span></div>
 </section>
-<section class="student-progress-grid">
+
+<div class="section-row"><div><h2>Eight-week record</h2><p>Open a submitted week to grade or update feedback.</p></div></div>
+<section class="progress-week-grid">
   {% for week in weeks %}
     {% set item = by_week.get(week.number) %}
-    <article class="progress-week-card">
-      <div class="progress-week-top"><span class="week-index">{{ '%02d'|format(week.number) }}</span><span class="status-pill {{ item.status if item else 'not-started' }}">{{ (item.status|replace('_',' ')|title) if item else 'Not started' }}</span></div>
-      <span class="eyebrow">{{ week.phase }}</span><h2>{{ week.title }}</h2><p>{{ week.interview }}</p>
-      <dl><dt>Revision</dt><dd>{{ item.revision_number if item else 0 }}</dd><dt>Score</dt><dd>{{ item.total_score|round(1) if item and item.total_score is not none else '—' }}</dd><dt>Updated</dt><dd>{{ item.updated_at[:10] if item else '—' }}</dd></dl>
-      {% if item %}<a class="button button-quiet" href="{{ url_for('review_submission', submission_id=item.id) }}">Open work</a>{% else %}<a class="text-link" href="{{ url_for('curriculum_week', week_number=week.number) }}">View curriculum →</a>{% endif %}
-    </article>
+    {% if item %}<a class="card progress-week-card" href="{{ url_for('review_submission', submission_id=item.id) }}">{% else %}<article class="card progress-week-card">{% endif %}
+      <span class="week-no">{{ '%02d'|format(week.number) }}</span>
+      <span><h3>{{ week.title }}</h3><p>{{ item.updated_at[:10] if item else 'Not started' }}</p></span>
+      <span>{% if item and item.total_score is not none %}<span class="score-chip">{{ item.total_score|round(1) }}</span>{% else %}<span class="status-pill {{ item.status if item else 'not-started' }}">{{ (item.status|replace('_',' ')|title) if item else 'Not started' }}</span>{% endif %}</span>
+    {% if item %}</a>{% else %}</article>{% endif %}
   {% endfor %}
 </section>
 {% endblock %}
