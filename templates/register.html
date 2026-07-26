@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% block title %}Register | Salesforce Project Group{% endblock %}
+{% block content %}
+<section class="auth-layout">
+  <div class="auth-intro"><span class="eyebrow">Student registration</span><h1>Join the 8-week Project Group.</h1><p>Select the instructor who will mentor and approve you. Your account stays pending until that instructor or an administrator accepts it.</p></div>
+  <form class="form-card" method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label>Full name<input name="name" required autocomplete="name"></label>
+    <label>Email address<input type="email" name="email" required autocomplete="email"></label>
+    <label>Password<input type="password" name="password" minlength="8" required autocomplete="new-password"><small>At least 8 characters.</small></label>
+    <label>Salesforce bootcamp or school<input name="bootcamp_name" placeholder="Program name"></label>
+    <label>Graduation date<input type="date" name="graduation_date"></label>
+    <label>LinkedIn profile<input type="url" name="linkedin_url" placeholder="https://linkedin.com/in/..."></label>
+    <label>Select your instructor<select name="selected_instructor_id" required><option value="">Choose an instructor</option>{% for instructor in instructors %}<option value="{{ instructor.id }}">{{ instructor.name }}</option>{% endfor %}</select></label>
+    <button class="button button-large" type="submit">Submit registration</button>
+    <p class="form-note">Already registered? <a href="{{ url_for('login') }}">Sign in</a></p>
+  </form>
+</section>
+{% endblock %}

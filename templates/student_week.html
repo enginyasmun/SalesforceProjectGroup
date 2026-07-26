@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block title %}Week {{ week.number }} | Salesforce Project Group{% endblock %}
+{% block content %}
+<section class="page-header week-heading"><span class="eyebrow">Week {{ week.number }} · {{ week.phase }}</span><h1>{{ week.title }}</h1><p>{{ week.focus }}</p><div class="interview-callout"><small>Interview connection</small><strong>{{ week.interview }}</strong><p>{{ week.prompt }}</p></div></section>
+<section class="content-grid">
+  <aside class="lesson-panel"><h2>What you will learn</h2><ul class="check-list">{% for topic in week.topics %}<li>{{ topic }}</li>{% endfor %}</ul><h2>Required deliverables</h2><ol>{% for item in week.deliverables %}<li>{{ item }}</li>{% endfor %}</ol>{% if week.number in [4,7] %}<a class="text-link" href="{{ url_for('samples') }}">Study the presentation samples →</a>{% endif %}</aside>
+  <form class="submission-form" method="post" enctype="multipart/form-data">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label>Project story or weekly answer<textarea name="project_story" rows="6" placeholder="Write the clearest version of your answer...">{{ submission.project_story if submission else '' }}</textarea></label>
+    <label>Requirement understanding<textarea name="requirement_notes" rows="5" placeholder="Business problem, users, constraints, acceptance criteria...">{{ submission.requirement_notes if submission else '' }}</textarea></label>
+    <label>Research evidence<textarea name="research_notes" rows="5" placeholder="Sources, findings, options, trade-offs...">{{ submission.research_notes if submission else '' }}</textarea></label>
+    <label>Solution or build-planning notes<textarea name="design_notes" rows="5" placeholder="Data, security, automation, testing, risks...">{{ submission.design_notes if submission else '' }}</textarea></label>
+    <label>Presentation or document link<input type="url" name="presentation_url" value="{{ submission.presentation_url if submission else '' }}" placeholder="Google Slides, Drive, GitHub, or portfolio URL"></label>
+    <label>Reflection<textarea name="reflection" rows="4" placeholder="What improved? What remains difficult?">{{ submission.reflection if submission else '' }}</textarea></label>
+    <label>Supporting file<input type="file" name="file"><small>PDF, Word, PowerPoint, image, text, or ZIP. Maximum 12 MB.</small></label>
+    {% if submission and submission.instructor_feedback %}<div class="feedback-box"><small>Instructor feedback</small><p>{{ submission.instructor_feedback }}</p></div>{% endif %}
+    <div class="form-actions"><button class="button button-quiet" type="submit" name="action" value="draft">Save draft</button><button class="button" type="submit" name="action" value="submit">Submit for review</button></div>
+  </form>
+</section>
+{% endblock %}

@@ -1,0 +1,5 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="page-header"><span class="eyebrow">Submission reviews</span><h1>Coach the thinking, not only the document.</h1><p>Look for clear requirements, evidence-based research, defensible design, and professional explanation.</p></section>
+<div class="table-card"><table><thead><tr><th>Student</th><th>Week</th><th>Status</th><th>Updated</th><th></th></tr></thead><tbody>{% for item in submissions %}<tr><td>{{ item.student_name }}</td><td>Week {{ item.week_number }}</td><td><span class="status-pill {{ item.status }}">{{ item.status|replace('_',' ')|title }}</span></td><td>{{ item.updated_at[:10] }}</td><td><a href="{{ url_for('review_submission', submission_id=item.id) }}">Open review</a></td></tr>{% else %}<tr><td colspan="5">No submitted work yet.</td></tr>{% endfor %}</tbody></table></div>
+{% endblock %}

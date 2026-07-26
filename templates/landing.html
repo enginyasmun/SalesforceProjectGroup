@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="hero">
+  <div class="hero-copy">
+    <span class="eyebrow">For newly graduated Salesforce bootcamp students</span>
+    <h1>Your project is your first professional Salesforce story.</h1>
+    <p class="lead">This 8-week program teaches you how to understand requirements, research unfamiliar topics, design solutions, present clearly, and defend your decisions in a Salesforce interview.</p>
+    <div class="actions"><a class="button button-large" href="{{ url_for('register') }}">Join the Project Group</a><a class="text-link" href="#program">See the 8-week path →</a></div>
+    <div class="hero-proof"><span><strong>8</strong> focused weeks</span><span><strong>2</strong> improved samples</span><span><strong>1</strong> interview-ready story</span></div>
+  </div>
+  <aside class="hero-card">
+    <span class="card-kicker">The final outcome</span>
+    <h2>“Tell me about a Salesforce project you worked on.”</h2>
+    <p>You will answer with a clear business problem, requirements, research, design decisions, risks, results, and your personal contribution.</p>
+    <div class="answer-line"><span>01</span> Understand the problem</div>
+    <div class="answer-line"><span>02</span> Explain the decision</div>
+    <div class="answer-line"><span>03</span> Prove your contribution</div>
+  </aside>
+</section>
+
+<section class="section intro-grid">
+  <div><span class="eyebrow">Why this program exists</span><h2>Learning Salesforce is not enough for an interview.</h2></div>
+  <div class="prose"><p>Bootcamp graduates often know objects, Flow, security, reports, Apex, and integrations, but struggle to explain what they actually did. The Project Group closes that gap.</p><p>The program does not misrepresent bootcamp work as employment. It teaches students to present project experience honestly, with professional depth and evidence.</p></div>
+</section>
+
+<section class="section" id="program">
+  <div class="section-heading"><span class="eyebrow">The curriculum</span><h2>Eight weeks from project learner to interview-ready candidate.</h2></div>
+  <div class="week-grid">
+    {% for week in weeks %}
+    <article class="week-card"><div class="week-number">{{ '%02d'|format(week.number) }}</div><span>{{ week.phase }}</span><h3>{{ week.title }}</h3><p>{{ week.focus }}</p><small>Interview question: {{ week.interview }}</small></article>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="section two-column">
+  <div class="panel accent-panel"><span class="eyebrow">Student workflow</span><h2>Self-register. Select an instructor. Wait for approval.</h2><p>Your chosen instructor receives your application. Only that instructor or the academy administrator can approve your access.</p><a class="button" href="{{ url_for('register') }}">Start registration</a></div>
+  <div class="panel"><span class="eyebrow">What instructors see</span><h2>A focused mentoring workspace.</h2><ul class="check-list"><li>Pending students who selected them</li><li>Weekly submissions and evidence</li><li>Revision and approval controls</li><li>Student progress across all eight weeks</li></ul></div>
+</section>
+
+<section class="section samples-preview">
+  <div class="section-heading"><span class="eyebrow">Model work</span><h2>One strong example for each assignment type.</h2><p>Students study the structure, not copy the content.</p></div>
+  <div class="sample-grid">
+    {% for key, sample in samples.items() %}
+    <article class="sample-card"><span>{{ sample.kind }}</span><h3>{{ sample.title }}</h3><p>{{ sample.description }}</p><a class="text-link" href="{{ url_for('samples') }}#{{ key }}">Review sample →</a></article>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

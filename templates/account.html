@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block title %}Account | Salesforce Project Group{% endblock %}
+{% block content %}
+<section class="auth-layout compact-auth">
+  <div class="auth-intro"><span class="eyebrow">Account settings</span><h1>Keep your profile and password current.</h1><p>Your email address is used for sign-in and instructor communication.</p></div>
+  <form class="form-card" method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label>Full name<input name="name" value="{{ user.name }}" required></label>
+    <label>Email address<input type="email" name="email" value="{{ user.email }}" required></label>
+    <hr>
+    <h2>Change password</h2>
+    <label>Current password<input type="password" name="current_password" autocomplete="current-password"></label>
+    <label>New password<input type="password" name="new_password" minlength="8" autocomplete="new-password"><small>Leave blank to keep the current password.</small></label>
+    <button class="button" type="submit">Save account</button>
+  </form>
+</section>
+{% endblock %}

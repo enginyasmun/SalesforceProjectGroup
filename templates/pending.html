@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="status-page">
+  <div class="status-icon">…</div>
+  {% if user.approval_status == 'rejected' %}
+    <span class="eyebrow">Registration decision</span><h1>Your registration was not approved.</h1><p>Contact the program administrator or your selected instructor for more information.</p>
+  {% else %}
+    <span class="eyebrow">Approval pending</span><h1>Your registration is with {{ instructor.name if instructor else 'the academy team' }}.</h1><p>You can sign in, but the eight-week workspace will open only after approval.</p>
+  {% endif %}
+  <a class="button button-quiet" href="{{ url_for('logout') }}">Sign out</a>
+</section>
+{% endblock %}

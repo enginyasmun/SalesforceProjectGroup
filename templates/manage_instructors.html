@@ -1,0 +1,5 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="page-header"><span class="eyebrow">Administration</span><h1>Instructor accounts and approval ownership.</h1><p>Students can select only active instructors shown here.</p></section>
+<section class="content-grid admin-grid"><form class="form-card" method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><h2>Create instructor</h2><label>Full name<input name="name" required></label><label>Email<input type="email" name="email" required></label><label>Temporary password<input type="password" name="password" minlength="8" required></label><button class="button" type="submit">Create instructor</button></form><div class="table-card"><table><thead><tr><th>Instructor</th><th>Role</th><th>Selected students</th></tr></thead><tbody>{% for item in instructors %}<tr><td><strong>{{ item.name }}</strong><br><small>{{ item.email }}</small></td><td>{{ 'Administrator' if item.is_admin else 'Instructor' }}</td><td>{{ item.selected_students }}</td></tr>{% endfor %}</tbody></table></div></section>
+{% endblock %}

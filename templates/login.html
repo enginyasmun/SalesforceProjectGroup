@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block title %}Sign in | Salesforce Project Group{% endblock %}
+{% block content %}
+<section class="auth-layout compact-auth">
+  <div class="auth-intro"><span class="eyebrow">Welcome back</span><h1>Continue your project story.</h1><p>Students, instructors, and administrators use the same secure sign-in page.</p></div>
+  <form class="form-card" method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label>Email address<input type="email" name="email" required autocomplete="email"></label>
+    <label>Password<input type="password" name="password" required autocomplete="current-password"></label>
+    <button class="button button-large" type="submit">Sign in</button>
+    <p class="form-note">New student? <a href="{{ url_for('register') }}">Register here</a></p>
+  </form>
+</section>
+{% endblock %}

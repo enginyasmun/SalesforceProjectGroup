@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#171714">
+  <title>{% block title %}Salesforce Project Group{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="{{ url_for('landing') }}">
+      <span class="brand-mark">PG</span>
+      <span><strong>Salesforce Project Group</strong><small>Interview readiness program</small></span>
+    </a>
+    <nav>
+      {% if current_user %}
+        {% if current_user.role == 'student' and current_user.approval_status == 'approved' %}
+          <a href="{{ url_for('student_dashboard') }}">My program</a>
+          <a href="{{ url_for('samples') }}">Samples</a>
+        {% elif current_user.role == 'instructor' %}
+          <a href="{{ url_for('instructor_dashboard') }}">Overview</a>
+          <a href="{{ url_for('approvals') }}">Approvals</a>
+          <a href="{{ url_for('reviews') }}">Reviews</a>
+          <a href="{{ url_for('instructor_students') }}">Students</a>
+          {% if current_user.is_admin %}<a href="{{ url_for('manage_instructors') }}">Instructors</a>{% endif %}
+        {% endif %}
+        <a href="{{ url_for('account') }}">Account</a>
+        <a class="button button-quiet" href="{{ url_for('logout') }}">Sign out</a>
+      {% else %}
+        <a href="{{ url_for('landing') }}#program">Program</a>
+        <a href="{{ url_for('samples') }}">Samples</a>
+        <a href="{{ url_for('login') }}">Sign in</a>
+        <a class="button" href="{{ url_for('register') }}">Register</a>
+      {% endif %}
+    </nav>
+  </header>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="flash-stack">
+      {% for category, message in messages %}<div class="flash {{ category }}">{{ message }}</div>{% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <main>{% block content %}{% endblock %}</main>
+  <footer><span>Salesforce Project Group</span><span>Understand · Research · Design · Present · Defend</span></footer>
+</body>
+</html>

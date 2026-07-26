@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block title %}Presentation Samples | Salesforce Project Group{% endblock %}
+{% block content %}
+<section class="page-header"><span class="eyebrow">Presentation library</span><h1>Two improved examples. Two different skills.</h1><p>Use these to study structure, visual hierarchy, explanation, and professional storytelling. Do not copy the business content.</p></section>
+<section class="section sample-detail-grid">
+  {% for key, sample in samples.items() %}
+  <article class="sample-detail" id="{{ key }}">
+    <div class="sample-type">{{ sample.kind }}</div><h2>{{ sample.title }}</h2><p>{{ sample.description }}</p>
+    <h3>What to study</h3><ul class="check-list">{% for lesson in sample.lessons %}<li>{{ lesson }}</li>{% endfor %}</ul>
+    <a class="button" href="{{ url_for('download_sample', sample_key=key) }}">Download improved PowerPoint</a>
+  </article>
+  {% endfor %}
+</section>
+{% endblock %}

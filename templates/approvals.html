@@ -1,0 +1,7 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="page-header"><span class="eyebrow">Registration approvals</span><h1>Students who selected you.</h1><p>Review the student’s bootcamp and identity information before granting access.</p></section>
+<div class="approval-grid">
+{% for student in students %}<article class="approval-card"><div><span class="status-pill pending">Pending</span><h2>{{ student.name }}</h2><a href="mailto:{{ student.email }}">{{ student.email }}</a></div><dl><dt>Bootcamp</dt><dd>{{ student.bootcamp_name or 'Not provided' }}</dd><dt>Graduation</dt><dd>{{ student.graduation_date or 'Not provided' }}</dd><dt>Selected instructor</dt><dd>{{ student.instructor_name or 'Not assigned' }}</dd></dl>{% if student.linkedin_url %}<a class="text-link" href="{{ student.linkedin_url }}" target="_blank" rel="noopener">Open LinkedIn →</a>{% endif %}<form method="post" action="{{ url_for('registration_decision', student_id=student.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="button button-quiet" name="decision" value="rejected">Reject</button><button class="button" name="decision" value="approved">Approve</button></form></article>{% else %}<div class="empty-state">No student registrations are waiting for your approval.</div>{% endfor %}
+</div>
+{% endblock %}
