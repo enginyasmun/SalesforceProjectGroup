@@ -1,97 +1,44 @@
-# Salesforce Project Group Portal v3.1
+# Salesforce Project Group Portal v4
 
-A simple, modern Flask learning portal for an 8-week post-bootcamp Salesforce interview-readiness program.
+A Flask portal built around two student jobs:
 
-## Main workflows
+1. Follow the eight-week guide and submit weekly work.
+2. Learn the assigned Salesforce project step by step.
 
-- Student self-registration and instructor selection
-- Instructor or administrator approval
-- Eight-week curriculum with guided study steps
-- Draft, submit, revision, and approval workflow
-- Five-part grading rubric with a score out of 100
-- Instructor feedback, required revisions, and strengths
-- Per-student progress and average scores
-- One Salesforce project presentation example
-- One research presentation example
+## Included
 
-## Technology
+- Student self-registration and instructor approval
+- Student home with two primary actions
+- Eight-week guided training and weekly submission workflow
+- Instructor scoring, feedback, revisions, and review filters
+- Project learning library with numbered project steps
+- Default HR Management Application with 19 project steps
+- Original HR project brief available to assigned students
+- Student checklist for project step, Admin certification, Developer certification, and weekly work
+- Instructor Batch-style student tracker
+- Admin project and project-step management
+- Safe SQLite migrations for the existing portal database
+- End-to-end smoke test
 
-- Python and Flask
-- SQLite
-- Plain HTML, CSS, and JavaScript
-- No front-end framework and no build step
-
-## Local setup
-
-```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-export SECRET_KEY='replace-with-a-long-random-value'
-export ADMIN_EMAIL='your-email@example.com'
-export ADMIN_PASSWORD='replace-this-password'
-python seed.py
-python app.py
-```
-
-Open `http://127.0.0.1:5000`.
-
-## Validate before deployment
-
-```bash
-python -m py_compile app.py curriculum_content.py smoke_test.py
-python seed.py
-python smoke_test.py
-```
-
-The smoke test uses a temporary database and does not touch production records.
-
-## Update the existing PythonAnywhere deployment
-
-After the updated files are committed to GitHub:
+## PythonAnywhere update
 
 ```bash
 cd /home/enginproject/SalesforceProjectGroup
 git pull origin main
 workon projectgroup-env
 pip install -r requirements.txt
+python -m py_compile app.py curriculum_content.py project_content.py seed.py smoke_test.py
 python seed.py
 python smoke_test.py
 ```
 
-Then reload the web app from the PythonAnywhere **Web** tab.
+Then reload the web app from the PythonAnywhere Web tab.
 
-The existing WSGI path remains:
+## Persistent data
 
-```text
-/home/enginproject/SalesforceProjectGroup
-```
-
-The existing persistent database remains:
+Keep the production database and uploads outside the Git checkout:
 
 ```text
 /home/enginproject/project-group-data/project_group.db
+/home/enginproject/project-group-data/uploads
 ```
-
-Do not delete or replace the production database. `seed.py` applies additive schema changes safely.
-
-## Health check
-
-Open:
-
-```text
-https://enginproject.pythonanywhere.com/health
-```
-
-Expected result:
-
-```json
-{"database":"ready","status":"ok","version":"3.0"}
-```
-
-
-## v3.1 reliability fixes
-
-- Smoke tests always use isolated test administrator settings.
-- SQLite connections are explicitly closed after every query and transaction.
-- Temporary smoke-test files clean up safely on PythonAnywhere.

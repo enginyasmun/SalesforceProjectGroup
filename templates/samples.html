@@ -1,20 +1,3 @@
-{% extends 'base.html' %}
-{% block title %}Examples | Salesforce Project Group{% endblock %}
-{% block public_content %}{% if not current_user %}<section class="public-section"><div class="public-section-head"><span class="eyebrow">Model work</span><h2>Study two strong examples.</h2><p>One example shows how to present a complete Salesforce project. The other shows how to explain a research topic simply.</p></div>{% endif %}
-{% block content %}
-{% if current_user %}<div class="page-head"><div><span class="eyebrow">Model work</span><h1>Two examples are enough.</h1><p>Study the structure and reasoning. Do not copy the wording.</p></div></div>{% endif %}
-<div class="sample-grid">
-  {% for key, sample in samples.items() %}
-  <article class="card sample-card">
-    <div class="sample-icon">{% if key == 'project' %}SF{% else %}R{% endif %}</div>
-    <span class="eyebrow">{{ sample.kind }}</span>
-    <h2>{{ sample.title }}</h2>
-    <p>{{ sample.description }}</p>
-    <ul class="sample-lessons">{% for lesson in sample.lessons %}<li>{{ lesson }}</li>{% endfor %}</ul>
-    <a class="button button-secondary" href="{{ url_for('download_sample', sample_key=key) }}">Download presentation</a>
-  </article>
-  {% endfor %}
-</div>
-{% if not current_user %}</section>{% endif %}
-{% endblock %}
+{% extends 'base.html' %}{% block title %}Examples | Project Group{% endblock %}{% block area %}Resources{% endblock %}{% block page_name %}Examples{% endblock %}{% block content %}
+<div class="page-heading"><div><span class="eyebrow">Presentation examples</span><h1>Study one strong project example and one research example.</h1><p>Use the structure and clarity as a model. Do not copy the content as your own work.</p></div></div><section class="sample-grid">{% for key,item in samples.items() %}<article class="sample-card card"><span class="sample-mark">{{ 'P' if key == 'project' else 'R' }}</span><div><small>{{ item.kind }}</small><h2>{{ item.title }}</h2><p>{{ item.description }}</p><a class="button button-secondary" href="{{ url_for('download_sample', sample_key=key) }}">Download example</a></div></article>{% endfor %}</section>
 {% endblock %}

@@ -1,32 +1,4 @@
-{% extends 'base.html' %}
-{% block title %}Curriculum | Salesforce Project Group{% endblock %}
-{% block content %}
-<div class="page-head">
-  <div><span class="eyebrow">8-week program</span><h1>A clear path from project to interview.</h1><p>Each week has one purpose, a guided study sequence, required evidence, and an interview connection.</p></div>
-  {% if current_user.role == 'student' %}<a class="button button-secondary" href="{{ url_for('student_dashboard') }}">Return to my progress</a>{% endif %}
-</div>
-
-<section class="card program-overview">
-  <div><h2>Use the same routine every week</h2><p>Learn the skill, complete the guided steps, check the quality gate, and submit the evidence for instructor feedback.</p></div>
-  <div class="program-stat"><strong>8 weeks</strong><span>4 simple phases</span></div>
-</section>
-
-<div class="phase-stack">
-  {% for phase in program_phases %}
-  <section class="card phase-block">
-    <div class="phase-head"><span class="phase-number">{{ phase.number }}</span><div><span class="eyebrow">Phase {{ phase.number }}</span><h2>{{ phase.title }}</h2><p>{{ phase.description }}</p></div></div>
-    <div class="phase-weeks">
-      {% for week_number in phase.weeks %}
-        {% set week = weeks[week_number - 1] %}
-        {% set item = by_week.get(week.number) if by_week else none %}
-        <a class="curriculum-card" href="{{ url_for('student_week', week_number=week.number) if current_user.role == 'student' else url_for('curriculum_week', week_number=week.number) }}">
-          <span class="week-no">{{ '%02d'|format(week.number) }}</span>
-          <span><strong>{{ week.title }}</strong><small>{{ week.estimated_time }} · {{ week.steps|length }} steps</small></span>
-          {% if current_user.role == 'student' %}<span class="status-pill {{ item.status if item else 'not-started' }}">{{ (item.status|replace('_',' ')|title) if item else 'Not started' }}</span>{% else %}<span class="arrow">→</span>{% endif %}
-        </a>
-      {% endfor %}
-    </div>
-  </section>
-  {% endfor %}
-</div>
+{% extends 'base.html' %}{% block title %}8-week guide | Project Group{% endblock %}{% block area %}Weekly training{% endblock %}{% block page_name %}8-week guide{% endblock %}{% block content %}
+<div class="page-heading"><div><span class="eyebrow">Weekly learning path</span><h1>Eight weeks from project work to interview answers.</h1><p>This curriculum does not replace the project. It teaches students how to understand, document, present, and defend the project.</p></div></div>
+<section class="curriculum-timeline">{% for week in weeks %}<a href="{{ url_for('curriculum_week', week_number=week.number) }}"><span>{{ '%02d'|format(week.number) }}</span><div><small>{{ week.phase }}</small><h2>{{ week.title }}</h2><p>{{ week.focus }}</p><b>{{ week.estimated_time }} · {{ week.deliverables|length }} deliverables</b></div><em>Open guide →</em></a>{% endfor %}</section>
 {% endblock %}

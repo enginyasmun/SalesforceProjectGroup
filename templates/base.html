@@ -3,134 +3,72 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#20211d">
-  <meta name="description" content="Salesforce Project Group interview readiness program">
+  <meta name="theme-color" content="#121410">
   <title>{% block title %}Salesforce Project Group{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
   <link rel="icon" href="{{ url_for('static', filename='favicon.svg') }}" type="image/svg+xml">
-  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css', v='3.0') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css', v='4.0') }}">
 </head>
-<body>
-<a class="skip-link" href="#main-content">Skip to main content</a>
-
-{% set endpoint = request.endpoint or '' %}
+<body class="{% if current_user %}portal-body{% else %}public-body{% endif %}">
 {% if current_user %}
-  {% if endpoint in ['student_dashboard'] %}{% set page_name = 'My learning' %}{% set page_hint = 'Your next step and progress' %}
-  {% elif endpoint in ['curriculum','curriculum_week'] %}{% set page_name = 'Curriculum' %}{% set page_hint = 'The complete 8-week path' %}
-  {% elif endpoint == 'student_week' %}{% set page_name = 'Weekly workspace' %}{% set page_hint = 'Learn, complete, and submit' %}
-  {% elif endpoint == 'instructor_dashboard' %}{% set page_name = 'Instructor overview' %}{% set page_hint = 'What needs your attention' %}
-  {% elif endpoint == 'approvals' %}{% set page_name = 'Approvals' %}{% set page_hint = 'Review new student registrations' %}
-  {% elif endpoint in ['reviews','review_submission'] %}{% set page_name = 'Reviews' %}{% set page_hint = 'Grade work and coach improvement' %}
-  {% elif endpoint in ['instructor_students','student_progress'] %}{% set page_name = 'Students' %}{% set page_hint = 'Progress across the program' %}
-  {% elif endpoint == 'manage_instructors' %}{% set page_name = 'Instructors' %}{% set page_hint = 'Manage instructor access' %}
-  {% elif endpoint == 'samples' %}{% set page_name = 'Examples' %}{% set page_hint = 'Two model presentations' %}
-  {% elif endpoint == 'account' %}{% set page_name = 'Account' %}{% set page_hint = 'Profile and password settings' %}
-  {% else %}{% set page_name = 'Project Group' %}{% set page_hint = 'Salesforce interview readiness' %}{% endif %}
-
-<div class="app-shell">
-  <aside class="sidebar" id="app-sidebar" aria-label="Main navigation">
-    <div class="sidebar-head">
-      <a class="app-brand" href="{{ url_for('dashboard') }}">
-        <span class="brand-mark">PG</span>
-        <span class="brand-copy"><strong>Project Group</strong><small>Salesforce readiness</small></span>
-      </a>
-      <button class="icon-button sidebar-close" type="button" data-menu-close aria-label="Close navigation">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7.4 6 10.6 10.6-1.4 1.4L6 7.4 7.4 6Zm9.2 0L18 7.4 7.4 18 6 16.6 16.6 6Z"/></svg>
-      </button>
-    </div>
-
-    <nav class="sidebar-nav">
-      {% if current_user.role == 'student' %}
-        <span class="nav-label">Learning</span>
-        <a class="nav-link {% if endpoint == 'student_dashboard' %}active{% endif %}" href="{{ url_for('student_dashboard') }}">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7v7H4V4Zm9 0h7v4h-7V4ZM4 13h7v7H4v-7Zm9-3h7v10h-7V10Z"/></svg><span>Home</span>
-        </a>
-        <a class="nav-link {% if endpoint in ['curriculum','curriculum_week','student_week'] %}active{% endif %}" href="{{ url_for('curriculum') }}">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a2 2 0 0 1 2 2v16l-8-3-8 3V5a2 2 0 0 1 2-2Zm1 4v2h10V7H7Zm0 4v2h10v-2H7Z"/></svg><span>Curriculum</span>
-        </a>
-        <a class="nav-link {% if endpoint == 'samples' %}active{% endif %}" href="{{ url_for('samples') }}">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Zm2 4v8h10V7H7Zm0 10v2h7v-2H7Z"/></svg><span>Examples</span>
-        </a>
-      {% else %}
-        <span class="nav-label">Instructor</span>
-        <a class="nav-link {% if endpoint == 'instructor_dashboard' %}active{% endif %}" href="{{ url_for('instructor_dashboard') }}">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7v7H4V4Zm9 0h7v4h-7V4ZM4 13h7v7H4v-7Zm9-3h7v10h-7V10Z"/></svg><span>Overview</span>
-        </a>
-        <a class="nav-link {% if endpoint == 'approvals' %}active{% endif %}" href="{{ url_for('approvals') }}">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm7.5 2a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7ZM2 21a7 7 0 0 1 14 0H2Zm13-5.5c4 0 7 2.4 7 5.5h-4.1a9.3 9.3 0 0 0-2.9-5.5Z"/></svg><span>Approvals</span>
-        </a>
-        <a class="nav-link {% if endpoint in ['reviews','review_submission'] %}active{% endif %}" href="{{ url_for('reviews') }}">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2h9l5 5v15H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Zm8 2v5h5l-5-5ZM8 13v2h8v-2H8Zm0 4v2h8v-2H8Z"/></svg><span>Reviews</span>
-        </a>
-        <a class="nav-link {% if endpoint in ['instructor_students','student_progress'] %}active{% endif %}" href="{{ url_for('instructor_students') }}">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm6 2a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM2 21a7 7 0 0 1 14 0H2Zm13.5-6c3.6 0 6.5 2.2 6.5 5v1h-4.1a9 9 0 0 0-2.4-6Z"/></svg><span>Students</span>
-        </a>
-        <span class="nav-label nav-label-gap">Program</span>
-        <a class="nav-link {% if endpoint in ['curriculum','curriculum_week'] %}active{% endif %}" href="{{ url_for('curriculum') }}">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a2 2 0 0 1 2 2v16l-8-3-8 3V5a2 2 0 0 1 2-2Zm1 4v2h10V7H7Zm0 4v2h10v-2H7Z"/></svg><span>Curriculum</span>
-        </a>
-        <a class="nav-link {% if endpoint == 'samples' %}active{% endif %}" href="{{ url_for('samples') }}">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Zm2 4v8h10V7H7Zm0 10v2h7v-2H7Z"/></svg><span>Examples</span>
-        </a>
-        {% if current_user.is_admin %}
-        <a class="nav-link {% if endpoint == 'manage_instructors' %}active{% endif %}" href="{{ url_for('manage_instructors') }}">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a5 5 0 1 0 0 10 5 5 0 0 0 0-10ZM4 21a8 8 0 0 1 16 0H4Zm14-8h2v3h3v2h-3v3h-2v-3h-3v-2h3v-3Z"/></svg><span>Instructors</span>
-        </a>
-        {% endif %}
+{% set endpoint = request.endpoint %}
+<div class="portal-shell">
+  <aside class="side-rail" id="side-rail">
+    <a class="rail-brand" href="{{ url_for('dashboard') }}"><span class="brand-symbol">PG</span><span><strong>Project Group</strong><small>Salesforce career portal</small></span></a>
+    <nav class="rail-nav">
+      {% if current_user.role == 'student' and current_user.approval_status == 'approved' %}
+        <span class="rail-label">Your portal</span>
+        <a class="rail-link {% if endpoint == 'student_dashboard' %}active{% endif %}" href="{{ url_for('student_dashboard') }}"><i>⌂</i><span>Home</span></a>
+        <a class="rail-link {% if endpoint in ['student_week','curriculum','curriculum_week'] %}active{% endif %}" href="{{ url_for('student_week', week_number=1) }}"><i>↗</i><span>Weekly work</span></a>
+        <a class="rail-link {% if endpoint in ['project_learning','project_step'] %}active{% endif %}" href="{{ url_for('project_learning') }}"><i>▦</i><span>Project learning</span></a>
+        <a class="rail-link {% if endpoint == 'student_checklist' %}active{% endif %}" href="{{ url_for('student_checklist') }}"><i>✓</i><span>My checklist</span></a>
+        <span class="rail-label spaced">Resources</span>
+        <a class="rail-link {% if endpoint in ['curriculum','curriculum_week'] %}active{% endif %}" href="{{ url_for('curriculum') }}"><i>8</i><span>8-week guide</span></a>
+        <a class="rail-link {% if endpoint == 'samples' %}active{% endif %}" href="{{ url_for('samples') }}"><i>◇</i><span>Examples</span></a>
+      {% elif current_user.role == 'instructor' %}
+        <span class="rail-label">Instructor</span>
+        <a class="rail-link {% if endpoint == 'instructor_dashboard' %}active{% endif %}" href="{{ url_for('instructor_dashboard') }}"><i>⌂</i><span>Home</span></a>
+        <a class="rail-link {% if endpoint == 'approvals' %}active{% endif %}" href="{{ url_for('approvals') }}"><i>+</i><span>Approvals</span></a>
+        <a class="rail-link {% if endpoint in ['reviews','review_submission'] %}active{% endif %}" href="{{ url_for('reviews') }}"><i>↗</i><span>Weekly reviews</span></a>
+        <a class="rail-link {% if endpoint in ['instructor_students','student_progress'] %}active{% endif %}" href="{{ url_for('instructor_students') }}"><i>✓</i><span>Student tracker</span></a>
+        <span class="rail-label spaced">Learning setup</span>
+        <a class="rail-link {% if endpoint in ['manage_projects','manage_project','edit_project_step'] %}active{% endif %}" href="{{ url_for('manage_projects') }}"><i>▦</i><span>Projects</span></a>
+        <a class="rail-link {% if endpoint in ['curriculum','curriculum_week'] %}active{% endif %}" href="{{ url_for('curriculum') }}"><i>8</i><span>8-week guide</span></a>
+        <a class="rail-link {% if endpoint == 'samples' %}active{% endif %}" href="{{ url_for('samples') }}"><i>◇</i><span>Examples</span></a>
+        {% if current_user.is_admin %}<a class="rail-link {% if endpoint == 'manage_instructors' %}active{% endif %}" href="{{ url_for('manage_instructors') }}"><i>◎</i><span>Instructors</span></a>{% endif %}
       {% endif %}
     </nav>
-
-    <div class="sidebar-foot">
-      <a class="user-card" href="{{ url_for('account') }}">
-        <span class="user-avatar">{{ current_user.name[:1]|upper }}</span>
-        <span><strong>{{ current_user.name }}</strong><small>{% if current_user.role == 'student' %}Student{% elif current_user.is_admin %}Administrator{% else %}Instructor{% endif %}</small></span>
-      </a>
-      <a class="signout" href="{{ url_for('logout') }}">Sign out</a>
+    <div class="rail-footer">
+      <a class="rail-user" href="{{ url_for('account') }}"><span>{{ current_user.name[:1]|upper }}</span><div><strong>{{ current_user.name }}</strong><small>{{ 'Student' if current_user.role == 'student' else ('Administrator' if current_user.is_admin else 'Instructor') }}</small></div></a>
+      <a class="rail-signout" href="{{ url_for('logout') }}">Sign out</a>
     </div>
   </aside>
-  <button class="sidebar-overlay" type="button" data-menu-close aria-label="Close navigation"></button>
-
-  <div class="app-main">
-    <header class="topbar">
-      <button class="icon-button mobile-menu" type="button" data-menu-open aria-label="Open navigation">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16v2H4V6Zm0 5h16v2H4v-2Zm0 5h16v2H4v-2Z"/></svg>
-      </button>
-      <div class="topbar-title"><small>{{ page_hint }}</small><strong>{{ page_name }}</strong></div>
-      <a class="topbar-account" href="{{ url_for('account') }}" aria-label="Open account settings">{{ current_user.name[:1]|upper }}</a>
+  <div class="rail-overlay" data-close-menu></div>
+  <section class="portal-stage">
+    <header class="portal-topbar">
+      <button class="menu-button" type="button" data-open-menu aria-label="Open navigation">☰</button>
+      <div class="topbar-copy"><span>{% block area %}Project Group portal{% endblock %}</span><strong>{% block page_name %}Workspace{% endblock %}</strong></div>
+      <a class="topbar-account" href="{{ url_for('account') }}">{{ current_user.name[:1]|upper }}</a>
     </header>
-
-    <main id="main-content" class="app-content">
-      {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-        <div class="flash-stack" role="status" aria-live="polite">
-          {% for category, message in messages %}
-          <div class="flash {{ category }}"><span>{{ message }}</span><button type="button" data-flash-close aria-label="Dismiss message">×</button></div>
-          {% endfor %}
-        </div>
-        {% endif %}
-      {% endwith %}
+    <main class="portal-main">
+      {% with messages = get_flashed_messages(with_categories=true) %}{% if messages %}<div class="flash-stack">{% for category,message in messages %}<div class="flash {{ category }}"><span>{{ message }}</span><button type="button" data-dismiss>×</button></div>{% endfor %}</div>{% endif %}{% endwith %}
       {% block content %}{% endblock %}
     </main>
-  </div>
+  </section>
 </div>
-
 {% else %}
 <header class="public-header">
-  <a class="public-brand" href="{{ url_for('landing') }}"><span class="brand-mark">PG</span><span><strong>Salesforce Project Group</strong><small>Interview readiness</small></span></a>
-  <nav class="public-nav" aria-label="Public navigation">
-    <a href="{{ url_for('landing') }}#program">Program</a>
-    <a href="{{ url_for('samples') }}">Examples</a>
-    <a href="{{ url_for('login') }}">Sign in</a>
-    <a class="button button-primary button-small" href="{{ url_for('register') }}">Apply</a>
-  </nav>
+  <a class="public-brand" href="{{ url_for('landing') }}"><span class="brand-symbol">PG</span><span><strong>Salesforce Project Group</strong><small>Project learning and weekly coaching</small></span></a>
+  <nav><a href="{{ url_for('landing') }}#how-it-works">How it works</a><a href="{{ url_for('login') }}">Sign in</a><a class="button button-dark" href="{{ url_for('register') }}">Register</a></nav>
 </header>
-<main id="main-content" class="public-main">
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}<div class="public-flashes flash-stack" role="status">{% for category, message in messages %}<div class="flash {{ category }}"><span>{{ message }}</span></div>{% endfor %}</div>{% endif %}
-  {% endwith %}
-  {% block public_content %}{% block content_public %}{% endblock %}{% endblock %}
+<main class="public-main">
+  {% with messages = get_flashed_messages(with_categories=true) %}{% if messages %}<div class="public-flashes flash-stack">{% for category,message in messages %}<div class="flash {{ category }}">{{ message }}</div>{% endfor %}</div>{% endif %}{% endwith %}
+  {% block public_content %}{% endblock %}
 </main>
-<footer class="public-footer"><span>Salesforce Project Group</span><span>Understand · Research · Design · Present · Defend</span></footer>
+<footer class="public-footer"><strong>Salesforce Project Group</strong><span>Submit weekly work · Learn the project · Prepare for interviews</span></footer>
 {% endif %}
-<script src="{{ url_for('static', filename='app.js', v='3.0') }}" defer></script>
+<script src="{{ url_for('static', filename='app.js', v='4.0') }}" defer></script>
 </body>
 </html>

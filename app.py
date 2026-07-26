@@ -2,6 +2,7 @@ import base64
 import hashlib
 import io
 import os
+import re
 import secrets
 import sqlite3
 from datetime import date, datetime, timezone
@@ -15,11 +16,13 @@ from flask import (
 from werkzeug.utils import secure_filename
 
 from curriculum_content import CURRICULUM, RUBRIC
+from project_content import CERTIFICATIONS, HR_PROJECT, HR_PROJECT_STEPS
 
 BASE_DIR = Path(__file__).resolve().parent
 DB_PATH = Path(os.environ.get("PROJECT_GROUP_DATABASE", BASE_DIR / "project_group.db"))
 UPLOAD_DIR = Path(os.environ.get("PROJECT_GROUP_UPLOADS", BASE_DIR / "uploads"))
 SAMPLE_DIR = BASE_DIR / "static" / "sample_b64"
+PROJECT_FILE_DIR = BASE_DIR / "project_files"
 DB_PATH.parent.mkdir(parents=True, exist_ok=True)
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -33,51 +36,36 @@ app.config["SESSION_COOKIE_SECURE"] = os.environ.get("COOKIE_SECURE", "0") == "1
 PASSWORD_ITERATIONS = 260_000
 ALLOWED_EXTENSIONS = {"pdf", "doc", "docx", "ppt", "pptx", "txt", "md", "png", "jpg", "jpeg", "zip"}
 WEEKS = CURRICULUM
-PROGRAM_PHASES = [
-    {
-        "number": 1,
-        "title": "Build the project story",
-        "description": "Position the bootcamp experience honestly, understand the business need, and translate it into Salesforce requirements.",
-        "weeks": [1, 2, 3],
-    },
-    {
-        "number": 2,
-        "title": "Research before deciding",
-        "description": "Learn how to find reliable Salesforce information, compare options, and make an evidence-based recommendation.",
-        "weeks": [4],
-    },
-    {
-        "number": 3,
-        "title": "Design a defensible solution",
-        "description": "Plan the data, security, automation, testing, deployment, and risk approach before building.",
-        "weeks": [5, 6],
-    },
-    {
-        "number": 4,
-        "title": "Present and defend",
-        "description": "Turn the work into a clear presentation and answer interview questions with specific ownership and reasoning.",
-        "weeks": [7, 8],
-    },
-]
-APP_VERSION = "3.0"
+APP_VERSION = "4.0"
 _SCHEMA_READY = False
+
+CERT_STATUS = {
+    "not_started": "Not started",
+    "studying": "Studying",
+    "scheduled": "Exam scheduled",
+    "passed": "Passed",
+}
+PROJECT_STATUS = {
+    "not_started": "Not started",
+    "active": "In progress",
+    "blocked": "Needs help",
+    "completed": "Completed",
+}
 
 SAMPLES = {
     "project": {
         "title": "EMA: Salesforce Event Management Application",
-        "kind": "Complete project presentation",
-        "description": "A model for explaining business capabilities, data architecture, security, automation, Apex standards, delivery steps, and business value.",
+        "kind": "Project presentation example",
+        "description": "A model for explaining business capabilities, data architecture, automation, code standards, delivery, and value.",
         "file": "Improved_EMA_Project_Sample.pptx",
         "b64": "Improved_EMA_Project_Sample.pptx.b64",
-        "lessons": ["Start with the business problem", "Connect requirements to Salesforce capabilities", "Explain design decisions", "Close with measurable value"],
     },
     "research": {
         "title": "What Is an API?",
-        "kind": "Research presentation",
-        "description": "A model for turning a technical subject into a simple, well-researched explanation using analogies, real examples, structure, and a clear conclusion.",
+        "kind": "Research presentation example",
+        "description": "A model for explaining a technical subject clearly with structure, examples, and a practical takeaway.",
         "file": "Improved_API_Research_Sample.pptx",
         "b64": "Improved_API_Research_Sample.pptx.b64",
-        "lessons": ["Define the research question", "Teach from simple to complex", "Use credible examples", "Make one recommendation or takeaway"],
     },
 }
 
@@ -139,17 +127,33 @@ def execute(sql, params=()):
         conn.close()
 
 
-def init_db():
+def executescript(script):
     conn = get_db()
     try:
-        conn.executescript((BASE_DIR / "schema.sql").read_text(encoding="utf-8"))
+        conn.executescript(script)
         conn.commit()
     except Exception:
         conn.rollback()
         raise
     finally:
         conn.close()
-    bootstrap_admin()
+
+
+def split_lines(value):
+    if not value:
+        return []
+    return [line.strip() for line in str(value).splitlines() if line.strip()]
+
+
+def slugify(value):
+    slug = re.sub(r"[^a-z0-9]+", "-", value.lower()).strip("-")
+    return slug or secrets.token_hex(4)
+
+
+def ensure_column(table, column, definition):
+    columns = {row["name"] for row in query_all(f"PRAGMA table_info({table})")}
+    if column not in columns:
+        execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
 
 
 def bootstrap_admin():
@@ -166,13 +170,80 @@ def bootstrap_admin():
         )
 
 
-def ensure_column(table, column, definition):
-    columns = {row["name"] for row in query_all(f"PRAGMA table_info({table})")}
-    if column not in columns:
-        execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
+def seed_reference_data():
+    for item in CERTIFICATIONS:
+        execute(
+            """
+            INSERT INTO certifications(code,name,short_name,sort_order,is_active)
+            VALUES (?,?,?,?,1)
+            ON CONFLICT(code) DO UPDATE SET name=excluded.name,short_name=excluded.short_name,
+                sort_order=excluded.sort_order,is_active=1
+            """,
+            (item["code"], item["name"], item["short_name"], item["sort_order"]),
+        )
+
+    project = query_one("SELECT id FROM projects WHERE slug=?", (HR_PROJECT["slug"],))
+    if not project:
+        project_id = execute(
+            """
+            INSERT INTO projects(name,slug,short_name,summary,business_problem,users,objects,outcomes,
+                source_filename,is_active,created_at,updated_at)
+            VALUES (?,?,?,?,?,?,?,?,?,1,?,?)
+            """,
+            (
+                HR_PROJECT["name"], HR_PROJECT["slug"], HR_PROJECT["short_name"], HR_PROJECT["summary"],
+                HR_PROJECT["business_problem"], HR_PROJECT["users"], HR_PROJECT["objects"], HR_PROJECT["outcomes"],
+                HR_PROJECT["source_filename"], now_iso(), now_iso(),
+            ),
+        )
+    else:
+        project_id = project["id"]
+
+    for step in HR_PROJECT_STEPS:
+        execute(
+            """
+            INSERT INTO project_steps(project_id,step_number,phase,title,summary,tasks,deliverables,
+                source_reference,is_published,created_at,updated_at)
+            VALUES (?,?,?,?,?,?,?,?,1,?,?)
+            ON CONFLICT(project_id,step_number) DO NOTHING
+            """,
+            (
+                project_id, step["step_number"], step["phase"], step["title"], step["summary"],
+                "\n".join(step["tasks"]), "\n".join(step["deliverables"]), step["source_reference"],
+                now_iso(), now_iso(),
+            ),
+        )
 
 
-def migrate_schema():
+def ensure_student_tracking(student_id):
+    if not query_one("SELECT id FROM student_projects WHERE student_id=?", (student_id,)):
+        project = query_one("SELECT id FROM projects WHERE is_active=1 ORDER BY id LIMIT 1")
+        if project:
+            execute(
+                """
+                INSERT INTO student_projects(student_id,project_id,current_step,status,started_at,updated_at)
+                VALUES (?,?,1,'active',?,?)
+                """,
+                (student_id, project["id"], now_iso(), now_iso()),
+            )
+    certs = query_all("SELECT id FROM certifications WHERE is_active=1")
+    for cert in certs:
+        execute(
+            """
+            INSERT INTO student_certifications(student_id,certification_id,status,updated_at)
+            VALUES (?,?,'not_started',?)
+            ON CONFLICT(student_id,certification_id) DO NOTHING
+            """,
+            (student_id, cert["id"], now_iso()),
+        )
+
+
+def ensure_schema():
+    global _SCHEMA_READY
+    if _SCHEMA_READY:
+        return
+    executescript((BASE_DIR / "schema.sql").read_text(encoding="utf-8"))
+    # Add grading columns when upgrading from the original deployed schema.
     additions = {
         "submitted_at": "TEXT",
         "revision_number": "INTEGER NOT NULL DEFAULT 0",
@@ -187,18 +258,10 @@ def migrate_schema():
     }
     for column, definition in additions.items():
         ensure_column("submissions", column, definition)
-
-
-def ensure_schema():
-    global _SCHEMA_READY
-    if _SCHEMA_READY:
-        return
-    required = query_one("SELECT name FROM sqlite_master WHERE type='table' AND name='users'")
-    if not required:
-        init_db()
-    else:
-        migrate_schema()
-        bootstrap_admin()
+    bootstrap_admin()
+    seed_reference_data()
+    for student in query_all("SELECT id FROM users WHERE role='student' AND approval_status='approved'"):
+        ensure_student_tracking(student["id"])
     _SCHEMA_READY = True
 
 
@@ -228,47 +291,27 @@ def user_can_access_student(student_id, user=None):
     return bool(student and student["selected_instructor_id"] == user["id"])
 
 
-def parse_score(name):
-    value = request.form.get(name, "").strip()
-    if value == "":
-        return None
-    try:
-        score = float(value)
-    except ValueError:
-        raise ValueError("Scores must be numeric.")
-    if score < 0 or score > 20:
-        raise ValueError("Each rubric score must be between 0 and 20.")
-    return score
-
-
-@app.before_request
-def before_request():
-    ensure_schema()
-    if request.method == "POST":
-        expected = session.get("_csrf_token", "")
-        sent = request.form.get("csrf_token", "")
-        if not expected or not sent or not secrets.compare_digest(expected, sent):
-            abort(400)
-
-
-@app.context_processor
-def inject_globals():
-    return {
-        "current_user": current_user(),
-        "csrf_token": csrf_token(),
-        "weeks": WEEKS,
-        "rubric": RUBRIC,
-        "program_phases": PROGRAM_PHASES,
-        "current_year": date.today().year,
-    }
-
-
 def login_required(view):
     @wraps(view)
     def wrapped(*args, **kwargs):
         if not current_user():
             flash("Please sign in to continue.", "warning")
             return redirect(url_for("login"))
+        return view(*args, **kwargs)
+    return wrapped
+
+
+def student_required(view):
+    @wraps(view)
+    def wrapped(*args, **kwargs):
+        user = current_user()
+        if not user:
+            return redirect(url_for("login"))
+        if user["role"] != "student":
+            abort(403)
+        if user["approval_status"] != "approved" or not user["is_active"]:
+            return redirect(url_for("pending_account"))
+        ensure_student_tracking(user["id"])
         return view(*args, **kwargs)
     return wrapped
 
@@ -297,21 +340,7 @@ def admin_required(view):
     return wrapped
 
 
-def student_required(view):
-    @wraps(view)
-    def wrapped(*args, **kwargs):
-        user = current_user()
-        if not user:
-            return redirect(url_for("login"))
-        if user["role"] != "student":
-            abort(403)
-        if user["approval_status"] != "approved" or not user["is_active"]:
-            return redirect(url_for("pending_account"))
-        return view(*args, **kwargs)
-    return wrapped
-
-
-def program_access_required(view):
+def program_required(view):
     @wraps(view)
     def wrapped(*args, **kwargs):
         user = current_user()
@@ -319,8 +348,6 @@ def program_access_required(view):
             return redirect(url_for("login"))
         if user["role"] == "student" and (user["approval_status"] != "approved" or not user["is_active"]):
             return redirect(url_for("pending_account"))
-        if user["role"] == "instructor" and not user["is_active"]:
-            abort(403)
         return view(*args, **kwargs)
     return wrapped
 
@@ -329,10 +356,71 @@ def allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
+def parse_score(name):
+    value = request.form.get(name, "").strip()
+    if value == "":
+        return None
+    try:
+        score = float(value)
+    except ValueError as exc:
+        raise ValueError("Scores must be numeric.") from exc
+    if score < 0 or score > 20:
+        raise ValueError("Each rubric score must be between 0 and 20.")
+    return score
+
+
+def project_for_student(student_id):
+    return query_one(
+        """
+        SELECT sp.*,p.name AS project_name,p.short_name,p.summary,p.business_problem,p.users,p.objects,
+               p.outcomes,p.source_filename,p.slug
+        FROM student_projects sp JOIN projects p ON p.id=sp.project_id
+        WHERE sp.student_id=?
+        """,
+        (student_id,),
+    )
+
+
+def certification_rows(student_id):
+    return query_all(
+        """
+        SELECT sc.*,c.code,c.name,c.short_name,c.sort_order
+        FROM certifications c
+        LEFT JOIN student_certifications sc ON sc.certification_id=c.id AND sc.student_id=?
+        WHERE c.is_active=1 ORDER BY c.sort_order,c.name
+        """,
+        (student_id,),
+    )
+
+
+@app.before_request
+def before_request():
+    ensure_schema()
+    if request.method == "POST":
+        expected = session.get("_csrf_token", "")
+        sent = request.form.get("csrf_token", "")
+        if not expected or not sent or not secrets.compare_digest(expected, sent):
+            abort(400)
+
+
+@app.context_processor
+def inject_globals():
+    return {
+        "current_user": current_user(),
+        "csrf_token": csrf_token(),
+        "weeks": WEEKS,
+        "rubric": RUBRIC,
+        "cert_status": CERT_STATUS,
+        "project_status": PROJECT_STATUS,
+        "split_lines": split_lines,
+        "current_year": date.today().year,
+    }
+
+
 @app.route("/health")
 def health():
-    database_ready = bool(query_one("SELECT name FROM sqlite_master WHERE type='table' AND name='users'"))
-    return jsonify({"status": "ok", "database": "ready" if database_ready else "missing", "version": APP_VERSION})
+    ready = bool(query_one("SELECT name FROM sqlite_master WHERE type='table' AND name='users'"))
+    return jsonify({"status": "ok", "database": "ready" if ready else "missing", "version": APP_VERSION})
 
 
 @app.route("/")
@@ -341,7 +429,7 @@ def landing():
     if user:
         return redirect(url_for("dashboard"))
     instructors = query_all("SELECT id,name FROM users WHERE role='instructor' AND is_active=1 ORDER BY is_admin DESC,name")
-    return render_template("landing.html", instructors=instructors, samples=SAMPLES)
+    return render_template("landing.html", instructors=instructors)
 
 
 @app.route("/register", methods=["GET", "POST"])
@@ -360,11 +448,11 @@ def register():
             instructor_id = 0
         instructor = query_one("SELECT id FROM users WHERE id=? AND role='instructor' AND is_active=1", (instructor_id,))
         if not name or not email or len(password) < 8 or not instructor:
-            flash("Complete all required fields and use a password with at least 8 characters.", "danger")
+            flash("Complete the required fields and use a password with at least 8 characters.", "danger")
         elif query_one("SELECT id FROM users WHERE lower(email)=?", (email,)):
             flash("An account already exists for this email address.", "danger")
         else:
-            user_id = execute(
+            student_id = execute(
                 """
                 INSERT INTO users(name,email,password_hash,role,is_admin,is_active,approval_status,
                     selected_instructor_id,bootcamp_name,graduation_date,linkedin_url,created_at)
@@ -373,8 +461,8 @@ def register():
                 (name, email, generate_password_hash(password), instructor_id, bootcamp, graduation_date, linkedin_url, now_iso()),
             )
             session.clear()
-            session["user_id"] = user_id
-            flash("Registration received. Your selected instructor must approve your account.", "success")
+            session["user_id"] = student_id
+            flash("Registration received. Your selected instructor must approve the account.", "success")
             return redirect(url_for("pending_account"))
     return render_template("register.html", instructors=instructors)
 
@@ -439,7 +527,7 @@ def account():
         password_hash = user["password_hash"]
         if new_password:
             if len(new_password) < 8 or not check_password_hash(user["password_hash"], current_password):
-                flash("Enter your current password and use a new password with at least 8 characters.", "danger")
+                flash("Enter the current password and use a new password with at least 8 characters.", "danger")
                 return redirect(request.url)
             password_hash = generate_password_hash(new_password)
         execute("UPDATE users SET name=?,email=?,password_hash=? WHERE id=?", (name, email, password_hash, user["id"]))
@@ -449,11 +537,13 @@ def account():
 
 
 @app.route("/samples")
+@login_required
 def samples():
     return render_template("samples.html", samples=SAMPLES)
 
 
 @app.route("/samples/<sample_key>/download")
+@login_required
 def download_sample(sample_key):
     sample = SAMPLES.get(sample_key)
     if not sample:
@@ -466,33 +556,22 @@ def download_sample(sample_key):
         abort(404)
     payload = base64.b64decode(encoded_file.read_text(encoding="ascii"))
     return send_file(
-        io.BytesIO(payload),
-        as_attachment=True,
-        download_name=sample["file"],
+        io.BytesIO(payload), as_attachment=True, download_name=sample["file"],
         mimetype="application/vnd.openxmlformats-officedocument.presentationml.presentation",
     )
 
 
 @app.route("/curriculum")
-@program_access_required
+@program_required
 def curriculum():
-    user = current_user()
-    submissions = []
-    by_week = {}
-    if user["role"] == "student":
-        submissions = query_all("SELECT * FROM submissions WHERE student_id=? ORDER BY week_number", (user["id"],))
-        by_week = {row["week_number"]: row for row in submissions}
-    return render_template("curriculum.html", by_week=by_week)
+    return render_template("curriculum.html")
 
 
 @app.route("/curriculum/week/<int:week_number>")
-@program_access_required
+@program_required
 def curriculum_week(week_number):
     if not 1 <= week_number <= 8:
         abort(404)
-    user = current_user()
-    if user["role"] == "student":
-        return redirect(url_for("student_week", week_number=week_number))
     return render_template("curriculum_week.html", week=WEEKS[week_number - 1])
 
 
@@ -500,21 +579,84 @@ def curriculum_week(week_number):
 @student_required
 def student_dashboard():
     user = current_user()
+    project = project_for_student(user["id"])
+    certs = certification_rows(user["id"])
     submissions = query_all("SELECT * FROM submissions WHERE student_id=? ORDER BY week_number", (user["id"],))
     by_week = {row["week_number"]: row for row in submissions}
     approved = sum(1 for row in submissions if row["status"] == "approved")
     submitted = sum(1 for row in submissions if row["status"] in {"submitted", "under_review", "revision", "approved"})
+    next_week = next((number for number in range(1, 9) if not by_week.get(number) or by_week[number]["status"] != "approved"), None)
     approved_scores = [row["total_score"] for row in submissions if row["status"] == "approved" and row["total_score"] is not None]
     average_score = round(sum(approved_scores) / len(approved_scores), 1) if approved_scores else None
-    next_week = next((week["number"] for week in WEEKS if not by_week.get(week["number"]) or by_week[week["number"]]["status"] != "approved"), None)
+    total_steps = query_one("SELECT COUNT(*) AS total FROM project_steps WHERE project_id=? AND is_published=1", (project["project_id"],))["total"] if project else 0
     return render_template(
-        "student_dashboard.html",
-        by_week=by_week,
-        approved=approved,
-        submitted=submitted,
-        average_score=average_score,
-        next_week=next_week,
+        "student_dashboard.html", project=project, certs=certs, by_week=by_week, approved=approved,
+        submitted=submitted, next_week=next_week, average_score=average_score, total_steps=total_steps,
     )
+
+
+@app.route("/student/checklist")
+@student_required
+def student_checklist():
+    user = current_user()
+    project = project_for_student(user["id"])
+    certs = certification_rows(user["id"])
+    submissions = query_all("SELECT * FROM submissions WHERE student_id=? ORDER BY week_number", (user["id"],))
+    by_week = {row["week_number"]: row for row in submissions}
+    total_steps = query_one("SELECT COUNT(*) AS total FROM project_steps WHERE project_id=? AND is_published=1", (project["project_id"],))["total"] if project else 0
+    return render_template("student_checklist.html", project=project, certs=certs, by_week=by_week, total_steps=total_steps)
+
+
+@app.route("/project/<int:project_id>/source")
+@program_required
+def download_project_source(project_id):
+    user = current_user()
+    project = query_one("SELECT * FROM projects WHERE id=?", (project_id,))
+    if not project or not project["source_filename"]:
+        abort(404)
+    if user["role"] == "student":
+        assignment = query_one("SELECT id FROM student_projects WHERE student_id=? AND project_id=?", (user["id"], project_id))
+        if not assignment:
+            abort(403)
+    source_path = PROJECT_FILE_DIR / project["source_filename"]
+    if not source_path.exists():
+        abort(404)
+    return send_from_directory(PROJECT_FILE_DIR, project["source_filename"], as_attachment=True)
+
+
+@app.route("/student/project")
+@student_required
+def project_learning():
+    user = current_user()
+    project = project_for_student(user["id"])
+    if not project:
+        return render_template("error.html", code=409, message="No project has been assigned yet."), 409
+    steps = query_all("SELECT * FROM project_steps WHERE project_id=? AND is_published=1 ORDER BY step_number", (project["project_id"],))
+    return render_template("project_learning.html", project=project, steps=steps)
+
+
+@app.route("/student/project/step/<int:step_number>")
+@student_required
+def project_step(step_number):
+    user = current_user()
+    project = project_for_student(user["id"])
+    if not project:
+        abort(404)
+    step = query_one(
+        "SELECT * FROM project_steps WHERE project_id=? AND step_number=? AND is_published=1",
+        (project["project_id"], step_number),
+    )
+    if not step:
+        abort(404)
+    previous_step = query_one(
+        "SELECT step_number FROM project_steps WHERE project_id=? AND step_number<? AND is_published=1 ORDER BY step_number DESC LIMIT 1",
+        (project["project_id"], step_number),
+    )
+    next_step = query_one(
+        "SELECT step_number FROM project_steps WHERE project_id=? AND step_number>? AND is_published=1 ORDER BY step_number LIMIT 1",
+        (project["project_id"], step_number),
+    )
+    return render_template("project_step.html", project=project, step=step, previous_step=previous_step, next_step=next_step)
 
 
 @app.route("/student/week/<int:week_number>", methods=["GET", "POST"])
@@ -527,7 +669,7 @@ def student_week(week_number):
     submission = query_one("SELECT * FROM submissions WHERE student_id=? AND week_number=?", (user["id"], week_number))
     if request.method == "POST":
         if submission and submission["status"] == "approved":
-            flash("This week is approved. Ask your instructor to reopen it before making changes.", "warning")
+            flash("This week is approved. Ask the instructor to reopen it before changing the submission.", "warning")
             return redirect(request.url)
         action = request.form.get("action", "draft")
         status = "submitted" if action == "submit" else "draft"
@@ -538,7 +680,7 @@ def student_week(week_number):
         presentation_url = request.form.get("presentation_url", "").strip()
         reflection = request.form.get("reflection", "").strip()
         if status == "submitted" and not project_story:
-            flash("Add the main weekly answer before submitting for review.", "danger")
+            flash("Add the main weekly summary before submitting.", "danger")
             return redirect(request.url)
         file_name = submission["file_name"] if submission else None
         uploaded = request.files.get("file")
@@ -557,33 +699,31 @@ def student_week(week_number):
         if submission:
             execute(
                 """
-                UPDATE submissions SET status=?,project_story=?,requirement_notes=?,research_notes=?,
-                    design_notes=?,presentation_url=?,reflection=?,file_name=?,submitted_at=?,
-                    revision_number=?,updated_at=? WHERE id=? AND student_id=?
+                UPDATE submissions SET status=?,project_story=?,requirement_notes=?,research_notes=?,design_notes=?,
+                    presentation_url=?,reflection=?,file_name=?,submitted_at=?,revision_number=?,updated_at=?
+                WHERE id=? AND student_id=?
                 """,
                 (
-                    status, project_story, requirement_notes, research_notes, design_notes,
-                    presentation_url, reflection, file_name, submitted_at, revision_number,
-                    now, submission["id"], user["id"],
+                    status, project_story, requirement_notes, research_notes, design_notes, presentation_url,
+                    reflection, file_name, submitted_at, revision_number, now, submission["id"], user["id"],
                 ),
             )
         else:
             execute(
                 """
-                INSERT INTO submissions(student_id,week_number,status,project_story,requirement_notes,
-                    research_notes,design_notes,presentation_url,reflection,file_name,submitted_at,
-                    revision_number,updated_at)
+                INSERT INTO submissions(student_id,week_number,status,project_story,requirement_notes,research_notes,
+                    design_notes,presentation_url,reflection,file_name,submitted_at,revision_number,updated_at)
                 VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
                 """,
                 (
-                    user["id"], week_number, status, project_story, requirement_notes,
-                    research_notes, design_notes, presentation_url, reflection, file_name,
-                    submitted_at, revision_number, now,
+                    user["id"], week_number, status, project_story, requirement_notes, research_notes, design_notes,
+                    presentation_url, reflection, file_name, submitted_at, revision_number, now,
                 ),
             )
         flash("Week submitted for review." if status == "submitted" else "Draft saved.", "success")
         return redirect(request.url)
-    return render_template("student_week.html", week=week, submission=submission)
+    project = project_for_student(user["id"])
+    return render_template("student_week.html", week=week, submission=submission, project=project)
 
 
 @app.route("/uploads/<path:filename>")
@@ -607,25 +747,26 @@ def uploaded_file(filename):
 @instructor_required
 def instructor_dashboard():
     user = current_user()
-    scope_sql = "" if user["is_admin"] else " AND u.selected_instructor_id=?"
+    scope = "" if user["is_admin"] else " AND u.selected_instructor_id=?"
     params = [] if user["is_admin"] else [user["id"]]
-    pending = query_one("SELECT COUNT(*) AS total FROM users u WHERE u.role='student' AND u.approval_status='pending'" + scope_sql, params)["total"]
-    students = query_one("SELECT COUNT(*) AS total FROM users u WHERE u.role='student' AND u.approval_status='approved'" + scope_sql, params)["total"]
+    pending = query_one("SELECT COUNT(*) AS total FROM users u WHERE u.role='student' AND u.approval_status='pending'" + scope, params)["total"]
+    students = query_one("SELECT COUNT(*) AS total FROM users u WHERE u.role='student' AND u.approval_status='approved'" + scope, params)["total"]
     reviews = query_one(
-        """
-        SELECT COUNT(*) AS total FROM submissions s JOIN users u ON u.id=s.student_id
-        WHERE s.status='submitted'
-        """ + scope_sql,
+        "SELECT COUNT(*) AS total FROM submissions s JOIN users u ON u.id=s.student_id WHERE s.status='submitted'" + scope,
+        params,
+    )["total"]
+    needs_help = query_one(
+        "SELECT COUNT(*) AS total FROM student_projects sp JOIN users u ON u.id=sp.student_id WHERE sp.status='blocked'" + scope,
         params,
     )["total"]
     recent = query_all(
         """
         SELECT s.*,u.name AS student_name FROM submissions s JOIN users u ON u.id=s.student_id
         WHERE s.status IN ('submitted','under_review','revision')
-        """ + scope_sql + " ORDER BY s.updated_at DESC LIMIT 10",
+        """ + scope + " ORDER BY s.updated_at DESC LIMIT 8",
         params,
     )
-    return render_template("instructor_dashboard.html", pending=pending, students=students, reviews=reviews, recent=recent)
+    return render_template("instructor_dashboard.html", pending=pending, students=students, reviews=reviews, needs_help=needs_help, recent=recent)
 
 
 @app.route("/instructor/approvals")
@@ -661,6 +802,8 @@ def registration_decision(student_id):
         "UPDATE users SET approval_status=?,is_active=?,approved_by=?,approved_at=? WHERE id=?",
         (decision, 1 if decision == "approved" else 0, user["id"], now_iso(), student_id),
     )
+    if decision == "approved":
+        ensure_student_tracking(student_id)
     flash(f"{student['name']} was {decision}.", "success")
     return redirect(url_for("approvals"))
 
@@ -669,22 +812,42 @@ def registration_decision(student_id):
 @instructor_required
 def instructor_students():
     user = current_user()
+    cohort = request.args.get("cohort", "").strip()
     sql = """
-        SELECT u.*,COUNT(s.id) AS submission_count,
-               SUM(CASE WHEN s.status='approved' THEN 1 ELSE 0 END) AS approved_weeks,
-               ROUND(AVG(CASE WHEN s.status='approved' THEN s.total_score END),1) AS average_score
-        FROM users u LEFT JOIN submissions s ON s.student_id=u.id
+        SELECT u.*,sp.current_step,sp.status AS project_status,p.short_name AS project_name,
+               COUNT(DISTINCT s.id) AS submission_count,
+               COUNT(DISTINCT CASE WHEN s.status='approved' THEN s.id END) AS approved_weeks,
+               ROUND(AVG(CASE WHEN s.status='approved' THEN s.total_score END),1) AS average_score,
+               MAX(CASE WHEN c.code='ADMIN' THEN sc.status END) AS admin_cert_status,
+               MAX(CASE WHEN c.code='PDI' THEN sc.status END) AS developer_cert_status
+        FROM users u
+        LEFT JOIN student_projects sp ON sp.student_id=u.id
+        LEFT JOIN projects p ON p.id=sp.project_id
+        LEFT JOIN submissions s ON s.student_id=u.id
+        LEFT JOIN student_certifications sc ON sc.student_id=u.id
+        LEFT JOIN certifications c ON c.id=sc.certification_id
         WHERE u.role='student' AND u.approval_status='approved'
     """
     params = []
     if not user["is_admin"]:
         sql += " AND u.selected_instructor_id=?"
         params.append(user["id"])
-    sql += " GROUP BY u.id ORDER BY u.name"
-    return render_template("instructor_students.html", students=query_all(sql, params))
+    if cohort:
+        sql += " AND u.bootcamp_name=?"
+        params.append(cohort)
+    sql += " GROUP BY u.id ORDER BY u.bootcamp_name,u.name"
+    cohorts_sql = "SELECT DISTINCT bootcamp_name FROM users WHERE role='student' AND approval_status='approved' AND bootcamp_name<>''"
+    cohort_params = []
+    if not user["is_admin"]:
+        cohorts_sql += " AND selected_instructor_id=?"
+        cohort_params.append(user["id"])
+    cohorts_sql += " ORDER BY bootcamp_name"
+    return render_template(
+        "instructor_students.html", students=query_all(sql, params), cohorts=query_all(cohorts_sql, cohort_params), selected_cohort=cohort,
+    )
 
 
-@app.route("/instructor/student/<int:student_id>")
+@app.route("/instructor/student/<int:student_id>", methods=["GET", "POST"])
 @instructor_required
 def student_progress(student_id):
     user = current_user()
@@ -700,11 +863,68 @@ def student_progress(student_id):
     )
     if not student:
         abort(404)
+    ensure_student_tracking(student_id)
+    if request.method == "POST":
+        action = request.form.get("action")
+        if action == "project":
+            try:
+                project_id = int(request.form.get("project_id", "0"))
+                current_step = int(request.form.get("current_step", "1"))
+            except ValueError:
+                flash("Select a valid project and step.", "danger")
+                return redirect(request.url)
+            project = query_one("SELECT id FROM projects WHERE id=? AND is_active=1", (project_id,))
+            max_step_row = query_one("SELECT MAX(step_number) AS max_step FROM project_steps WHERE project_id=? AND is_published=1", (project_id,))
+            max_step = max_step_row["max_step"] or 1
+            status = request.form.get("project_status", "active")
+            note = request.form.get("instructor_note", "").strip()
+            if not project or status not in PROJECT_STATUS or not 1 <= current_step <= max_step:
+                flash("Select a valid project status and step.", "danger")
+                return redirect(request.url)
+            execute(
+                """
+                UPDATE student_projects SET project_id=?,current_step=?,status=?,instructor_note=?,updated_at=?
+                WHERE student_id=?
+                """,
+                (project_id, current_step, status, note, now_iso(), student_id),
+            )
+            flash("Project tracker updated.", "success")
+        elif action == "certification":
+            try:
+                certification_id = int(request.form.get("certification_id", "0"))
+            except ValueError:
+                certification_id = 0
+            status = request.form.get("certification_status", "not_started")
+            target_date = request.form.get("target_date", "").strip()
+            notes = request.form.get("certification_notes", "").strip()
+            if status not in CERT_STATUS or not query_one("SELECT id FROM certifications WHERE id=?", (certification_id,)):
+                flash("Select a valid certification status.", "danger")
+                return redirect(request.url)
+            execute(
+                """
+                UPDATE student_certifications SET status=?,target_date=?,notes=?,verified_by=?,verified_at=?,updated_at=?
+                WHERE student_id=? AND certification_id=?
+                """,
+                (
+                    status, target_date or None, notes, user["id"] if status == "passed" else None,
+                    now_iso() if status == "passed" else None, now_iso(), student_id, certification_id,
+                ),
+            )
+            flash("Certification tracker updated.", "success")
+        return redirect(request.url)
+
+    project = project_for_student(student_id)
+    certs = certification_rows(student_id)
     submissions = query_all("SELECT * FROM submissions WHERE student_id=? ORDER BY week_number", (student_id,))
     by_week = {row["week_number"]: row for row in submissions}
     approved_scores = [row["total_score"] for row in submissions if row["status"] == "approved" and row["total_score"] is not None]
     average_score = round(sum(approved_scores) / len(approved_scores), 1) if approved_scores else None
-    return render_template("student_progress.html", student=student, by_week=by_week, average_score=average_score)
+    projects = query_all("SELECT id,name FROM projects WHERE is_active=1 ORDER BY name")
+    max_step = query_one("SELECT MAX(step_number) AS max_step FROM project_steps WHERE project_id=? AND is_published=1", (project["project_id"],))["max_step"] if project else 1
+    return render_template(
+        "student_progress.html", student=student, project=project, certs=certs, by_week=by_week,
+        average_score=average_score, projects=projects, max_step=max_step or 1,
+    )
 
 
 @app.route("/instructor/reviews")
@@ -739,12 +959,8 @@ def reviews():
         student_params.append(user["id"])
     student_sql += " ORDER BY name"
     return render_template(
-        "reviews.html",
-        submissions=query_all(sql, params),
-        students=query_all(student_sql, student_params),
-        selected_status=status,
-        selected_student=student_id,
-        selected_week=week_number,
+        "reviews.html", submissions=query_all(sql, params), students=query_all(student_sql, student_params),
+        selected_status=status, selected_student=student_id, selected_week=week_number,
     )
 
 
@@ -768,22 +984,16 @@ def review_submission(submission_id):
         if status not in {"under_review", "revision", "approved"}:
             abort(400)
         try:
-            scores = {
-                "business": parse_score("score_business"),
-                "evidence": parse_score("score_evidence"),
-                "salesforce": parse_score("score_salesforce"),
-                "communication": parse_score("score_communication"),
-                "professionalism": parse_score("score_professionalism"),
-            }
+            scores = {item["key"]: parse_score(f"score_{item['key']}") for item in RUBRIC}
         except ValueError as exc:
             flash(str(exc), "danger")
             return redirect(request.url)
         if status in {"revision", "approved"} and any(value is None for value in scores.values()):
             flash("Complete all five rubric scores before requiring revision or approving the week.", "danger")
             return redirect(request.url)
-        feedback = request.form.get("instructor_feedback", "").strip()
         strengths = request.form.get("strengths", "").strip()
         revision_actions = request.form.get("revision_actions", "").strip()
+        feedback = request.form.get("instructor_feedback", "").strip()
         if status == "revision" and not revision_actions:
             flash("List the specific revision actions the student must complete.", "danger")
             return redirect(request.url)
@@ -791,19 +1001,158 @@ def review_submission(submission_id):
         execute(
             """
             UPDATE submissions SET status=?,score_business=?,score_evidence=?,score_salesforce=?,
-                score_communication=?,score_professionalism=?,total_score=?,strengths=?,
-                revision_actions=?,instructor_feedback=?,reviewed_by=?,reviewed_at=?,updated_at=?
-            WHERE id=?
+                score_communication=?,score_professionalism=?,total_score=?,strengths=?,revision_actions=?,
+                instructor_feedback=?,reviewed_by=?,reviewed_at=?,updated_at=? WHERE id=?
             """,
             (
-                status, scores["business"], scores["evidence"], scores["salesforce"],
-                scores["communication"], scores["professionalism"], total_score,
-                strengths, revision_actions, feedback, user["id"], now_iso(), now_iso(), submission_id,
+                status, scores["business"], scores["evidence"], scores["salesforce"], scores["communication"],
+                scores["professionalism"], total_score, strengths, revision_actions, feedback, user["id"],
+                now_iso(), now_iso(), submission_id,
             ),
         )
         flash("Grade and feedback saved.", "success")
         return redirect(request.url)
     return render_template("review_submission.html", row=row, week=WEEKS[row["week_number"] - 1])
+
+
+@app.route("/instructor/projects", methods=["GET", "POST"])
+@instructor_required
+def manage_projects():
+    user = current_user()
+    if request.method == "POST":
+        if not user["is_admin"]:
+            abort(403)
+        name = request.form.get("name", "").strip()
+        summary = request.form.get("summary", "").strip()
+        if not name or not summary:
+            flash("Project name and summary are required.", "danger")
+        else:
+            slug = slugify(name)
+            base_slug = slug
+            suffix = 2
+            while query_one("SELECT id FROM projects WHERE slug=?", (slug,)):
+                slug = f"{base_slug}-{suffix}"
+                suffix += 1
+            project_id = execute(
+                """
+                INSERT INTO projects(name,slug,short_name,summary,business_problem,users,objects,outcomes,
+                    is_active,created_at,updated_at)
+                VALUES (?,?,?,?,?,?,?, ?,1,?,?)
+                """,
+                (
+                    name, slug, request.form.get("short_name", "").strip(), summary,
+                    request.form.get("business_problem", "").strip(), request.form.get("users", "").strip(),
+                    request.form.get("objects", "").strip(), request.form.get("outcomes", "").strip(), now_iso(), now_iso(),
+                ),
+            )
+            flash("Project created. Add its project steps next.", "success")
+            return redirect(url_for("manage_project", project_id=project_id))
+    rows = query_all(
+        """
+        SELECT p.*,COUNT(DISTINCT ps.id) AS step_count,COUNT(DISTINCT sp.student_id) AS student_count
+        FROM projects p LEFT JOIN project_steps ps ON ps.project_id=p.id
+        LEFT JOIN student_projects sp ON sp.project_id=p.id
+        GROUP BY p.id ORDER BY p.is_active DESC,p.name
+        """
+    )
+    return render_template("manage_projects.html", projects=rows)
+
+
+@app.route("/instructor/project/<int:project_id>", methods=["GET", "POST"])
+@instructor_required
+def manage_project(project_id):
+    user = current_user()
+    project = query_one("SELECT * FROM projects WHERE id=?", (project_id,))
+    if not project:
+        abort(404)
+    if request.method == "POST":
+        if not user["is_admin"]:
+            abort(403)
+        action = request.form.get("action")
+        if action == "project":
+            name = request.form.get("name", "").strip()
+            summary = request.form.get("summary", "").strip()
+            if not name or not summary:
+                flash("Project name and summary are required.", "danger")
+            else:
+                execute(
+                    """
+                    UPDATE projects SET name=?,short_name=?,summary=?,business_problem=?,users=?,objects=?,outcomes=?,
+                        is_active=?,updated_at=? WHERE id=?
+                    """,
+                    (
+                        name, request.form.get("short_name", "").strip(), summary,
+                        request.form.get("business_problem", "").strip(), request.form.get("users", "").strip(),
+                        request.form.get("objects", "").strip(), request.form.get("outcomes", "").strip(),
+                        1 if request.form.get("is_active") == "1" else 0, now_iso(), project_id,
+                    ),
+                )
+                flash("Project details updated.", "success")
+        elif action == "step":
+            try:
+                step_number = int(request.form.get("step_number", "0"))
+            except ValueError:
+                step_number = 0
+            title = request.form.get("title", "").strip()
+            phase = request.form.get("phase", "").strip()
+            if step_number < 1 or not title or not phase:
+                flash("Step number, phase, and title are required.", "danger")
+            elif query_one("SELECT id FROM project_steps WHERE project_id=? AND step_number=?", (project_id, step_number)):
+                flash("That step number already exists for this project.", "danger")
+            else:
+                execute(
+                    """
+                    INSERT INTO project_steps(project_id,step_number,phase,title,summary,tasks,deliverables,
+                        source_reference,is_published,created_at,updated_at)
+                    VALUES (?,?,?,?,?,?,?,?,1,?,?)
+                    """,
+                    (
+                        project_id, step_number, phase, title, request.form.get("step_summary", "").strip(),
+                        request.form.get("tasks", "").strip(), request.form.get("deliverables", "").strip(),
+                        request.form.get("source_reference", "").strip(), now_iso(), now_iso(),
+                    ),
+                )
+                flash("Project step added.", "success")
+        return redirect(request.url)
+    steps = query_all("SELECT * FROM project_steps WHERE project_id=? ORDER BY step_number", (project_id,))
+    return render_template("manage_project.html", project=project, steps=steps)
+
+
+@app.route("/instructor/project/step/<int:step_id>", methods=["GET", "POST"])
+@admin_required
+def edit_project_step(step_id):
+    step = query_one("SELECT * FROM project_steps WHERE id=?", (step_id,))
+    if not step:
+        abort(404)
+    if request.method == "POST":
+        try:
+            step_number = int(request.form.get("step_number", "0"))
+        except ValueError:
+            step_number = 0
+        title = request.form.get("title", "").strip()
+        phase = request.form.get("phase", "").strip()
+        duplicate = query_one(
+            "SELECT id FROM project_steps WHERE project_id=? AND step_number=? AND id<>?",
+            (step["project_id"], step_number, step_id),
+        )
+        if step_number < 1 or not title or not phase or duplicate:
+            flash("Use a unique positive step number, phase, and title.", "danger")
+        else:
+            execute(
+                """
+                UPDATE project_steps SET step_number=?,phase=?,title=?,summary=?,tasks=?,deliverables=?,
+                    source_reference=?,is_published=?,updated_at=? WHERE id=?
+                """,
+                (
+                    step_number, phase, title, request.form.get("summary", "").strip(),
+                    request.form.get("tasks", "").strip(), request.form.get("deliverables", "").strip(),
+                    request.form.get("source_reference", "").strip(), 1 if request.form.get("is_published") == "1" else 0,
+                    now_iso(), step_id,
+                ),
+            )
+            flash("Project step updated.", "success")
+            return redirect(url_for("manage_project", project_id=step["project_id"]))
+    return render_template("edit_project_step.html", step=step)
 
 
 @app.route("/instructor/manage", methods=["GET", "POST"])
@@ -847,6 +1196,11 @@ def error_403(_):
 @app.errorhandler(404)
 def error_404(_):
     return render_template("error.html", code=404, message="The requested page was not found."), 404
+
+
+@app.errorhandler(409)
+def error_409(_):
+    return render_template("error.html", code=409, message="The account setup is incomplete."), 409
 
 
 if __name__ == "__main__":

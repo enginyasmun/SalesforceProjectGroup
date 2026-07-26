@@ -1,61 +1,14 @@
 {% extends 'base.html' %}
-{% block title %}Salesforce Project Group | Interview Readiness{% endblock %}
+{% block title %}Salesforce Project Group Portal{% endblock %}
 {% block public_content %}
-<section class="landing-hero">
-  <div>
-    <span class="eyebrow">After the bootcamp</span>
-    <h1>Turn your Salesforce project into an interview story.</h1>
-    <p class="lead">An 8-week guided program for recent bootcamp graduates. Learn to understand requirements, research options, design solutions, present clearly, and defend your decisions.</p>
-    <div class="hero-actions">
-      <a class="button button-primary" href="{{ url_for('register') }}">Apply to join</a>
-      <a class="button button-secondary" href="#program">See the 8-week path</a>
-    </div>
-    <p class="hero-note">Students register themselves. The instructor they select must approve the account.</p>
-  </div>
-  <aside class="hero-preview" aria-label="Program preview">
-    <small>Your learning path</small>
-    <h2>One clear next step.</h2>
-    <p>The portal shows what to learn, what to do, what to submit, and how it connects to an interview.</p>
-    <div class="preview-progress"><div><i></i></div></div>
-    <div class="preview-list">
-      <div class="preview-item"><span>1</span><strong>Understand the business need</strong></div>
-      <div class="preview-item"><span>2</span><strong>Research and compare options</strong></div>
-      <div class="preview-item"><span>3</span><strong>Present and defend the solution</strong></div>
-    </div>
-  </aside>
-</section>
-
-<section class="public-section" id="program">
-  <div class="public-section-head">
-    <span class="eyebrow">Simple by design</span>
-    <h2>Learn it. Do it. Explain it.</h2>
-    <p>Every week uses the same easy structure, so students spend less time finding information and more time improving their Salesforce thinking.</p>
-  </div>
-  <div class="simple-steps">
-    <article class="simple-step"><span class="number">1</span><h3>Learn</h3><p>Read the objective, review the examples, and understand why the skill matters in a Salesforce role.</p></article>
-    <article class="simple-step"><span class="number">2</span><h3>Complete</h3><p>Follow a step-by-step guide with checkpoints and evidence requirements.</p></article>
-    <article class="simple-step"><span class="number">3</span><h3>Submit</h3><p>Send your work to an instructor, receive a score, revise it, and improve the interview answer.</p></article>
+<section class="public-hero">
+  <div class="public-hero-copy"><span class="eyebrow">A focused student portal</span><h1>One place to do the work and understand the project.</h1><p>Students use the portal for two things: complete and submit the weekly 8-week training, and learn the Salesforce project step by step.</p><div class="hero-actions"><a class="button button-lime" href="{{ url_for('register') }}">Join the group</a><a class="text-link" href="#how-it-works">See how it works ↓</a></div></div>
+  <div class="portal-preview">
+    <div class="preview-top"><span>Today</span><b>2 clear actions</b></div>
+    <article><i>01</i><div><small>Weekly work</small><strong>Finish the guide and submit evidence</strong><span>Instructor feedback and score</span></div></article>
+    <article><i>02</i><div><small>Project learning</small><strong>Open the project step you are working on</strong><span>Requirements, tasks, and deliverables</span></div></article>
   </div>
 </section>
-
-<section class="public-section">
-  <div class="public-section-head">
-    <span class="eyebrow">8-week curriculum</span>
-    <h2>From project learner to confident candidate.</h2>
-  </div>
-  <div class="public-week-grid">
-    {% for week in weeks %}
-    <article class="public-week-card">
-      <small>Week {{ week.number }}</small>
-      <h3>{{ week.title }}</h3>
-      <p>{{ week.focus }}</p>
-    </article>
-    {% endfor %}
-  </div>
-</section>
-
-<section class="public-cta">
-  <div><h2>Ready to build your project story?</h2><p>Choose an instructor when you register. Access begins after approval.</p></div>
-  <a class="button button-secondary" href="{{ url_for('register') }}">Start registration</a>
-</section>
+<section class="public-section" id="how-it-works"><div class="section-heading"><span class="eyebrow">How the portal works</span><h2>Simple for students. Visible for instructors.</h2></div><div class="three-card-grid"><article class="public-card"><span>1</span><h3>Follow the weekly guide</h3><p>Every week explains what to study, what to produce, and what to submit.</p></article><article class="public-card"><span>2</span><h3>Learn the assigned project</h3><p>Students see the business context, object model, project steps, tasks, and required evidence.</p></article><article class="public-card"><span>3</span><h3>Track readiness</h3><p>Instructors track project step, Admin certification, Developer certification, weekly work, scores, and revisions.</p></article></div></section>
+<section class="public-section portal-outcome"><div><span class="eyebrow">The end goal</span><h2>Students finish with one project they can explain and defend.</h2></div><ul><li>Clear requirement understanding</li><li>Evidence-based research</li><li>Salesforce design and development reasoning</li><li>Professional project presentation</li><li>Interview-ready answers</li></ul></section>
 {% endblock %}

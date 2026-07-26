@@ -1,6 +1,1 @@
-{% extends 'base.html' %}
-{% block title %}Error {{ code }} | Salesforce Project Group{% endblock %}
-{% block content %}
-<section class="card status-page"><div class="error-code">{{ code }}</div><h1>Something did not work.</h1><p>{{ message }}</p><a class="button button-primary" href="{{ url_for('dashboard') if current_user else url_for('landing') }}">Return home</a></section>
-{% endblock %}
-{% block public_content %}{% if not current_user %}<section class="card status-page"><div class="error-code">{{ code }}</div><h1>Something did not work.</h1><p>{{ message }}</p><a class="button button-primary" href="{{ url_for('landing') }}">Return home</a></section>{% endif %}{% endblock %}
+{% extends 'base.html' %}{% block area %}Portal{% endblock %}{% block page_name %}Something went wrong{% endblock %}{% block content %}<section class="center-state card"><span class="state-mark">{{ code }}</span><h1>{{ message }}</h1><a class="button button-secondary" href="{{ url_for('dashboard') if current_user else url_for('landing') }}">Return to the portal</a></section>{% endblock %}

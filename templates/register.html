@@ -1,32 +1,3 @@
-{% extends 'base.html' %}
-{% block title %}Apply | Salesforce Project Group{% endblock %}
-{% block public_content %}
-<section class="auth-page">
-  <div class="auth-copy">
-    <span class="eyebrow">Student application</span>
-    <h1>Create your account and choose your instructor.</h1>
-    <p>Your account remains pending until the selected instructor or the academy administrator approves it.</p>
-    <div class="auth-benefits">
-      <div class="auth-benefit"><i>1</i><span>Complete this short registration form</span></div>
-      <div class="auth-benefit"><i>2</i><span>Select the instructor who will review your work</span></div>
-      <div class="auth-benefit"><i>3</i><span>Begin the program after approval</span></div>
-    </div>
-  </div>
-  <form class="form-card" method="post">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-    <h2>Register</h2>
-    <p class="form-subtitle">Required fields are marked by the browser.</p>
-    <label class="field"><span>Full name</span><input name="name" autocomplete="name" required></label>
-    <label class="field"><span>Email</span><input type="email" name="email" autocomplete="email" required></label>
-    <label class="field"><span>Password</span><input type="password" name="password" minlength="8" autocomplete="new-password" required><small>Use at least 8 characters.</small></label>
-    <label class="field"><span>Instructor</span><select name="selected_instructor_id" required><option value="">Choose an instructor</option>{% for instructor in instructors %}<option value="{{ instructor.id }}">{{ instructor.name }}</option>{% endfor %}</select><small>This instructor will approve your registration and grade your work.</small></label>
-    <div class="form-row">
-      <label class="field"><span>Bootcamp name</span><input name="bootcamp_name" placeholder="Example: Salesforce Admin Bootcamp"></label>
-      <label class="field"><span>Graduation date</span><input type="date" name="graduation_date"></label>
-    </div>
-    <label class="field"><span>LinkedIn profile</span><input type="url" name="linkedin_url" placeholder="https://www.linkedin.com/in/..."></label>
-    <button class="button button-primary button-full" type="submit">Submit application</button>
-    <p class="form-footer">Already registered? <a class="text-link" href="{{ url_for('login') }}">Sign in</a></p>
-  </form>
-</section>
+{% extends 'base.html' %}{% block title %}Register | Project Group{% endblock %}{% block public_content %}
+<section class="auth-shell wide-auth"><div class="auth-copy"><span class="eyebrow">Student registration</span><h1>Join the project group.</h1><p>Select the instructor responsible for your group. Your account opens after that instructor or the administrator approves it.</p></div><form class="auth-card" method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><h2>Create student account</h2><div class="field-pair"><label>Full name<input name="name" required></label><label>Email<input type="email" name="email" required></label></div><label>Password<input type="password" name="password" minlength="8" required><small>At least 8 characters.</small></label><div class="field-pair"><label>Bootcamp or batch<input name="bootcamp_name" placeholder="Example: Batch 33"></label><label>Graduation date<input type="date" name="graduation_date"></label></div><label>LinkedIn profile<input type="url" name="linkedin_url" placeholder="https://www.linkedin.com/in/..."></label><label>Instructor<select name="selected_instructor_id" required><option value="">Select instructor</option>{% for instructor in instructors %}<option value="{{ instructor.id }}">{{ instructor.name }}</option>{% endfor %}</select></label><button class="button button-dark full" type="submit">Submit registration</button></form></section>
 {% endblock %}

@@ -1,6 +1,3 @@
-{% extends 'base.html' %}
-{% block title %}Week {{ week.number }} | Salesforce Project Group{% endblock %}
-{% block content %}
-<a class="breadcrumb" href="{{ url_for('curriculum') }}">← Back to curriculum</a>
-{% include '_week_guide.html' %}
+{% extends 'base.html' %}{% block title %}Week {{ week.number }} guide | Project Group{% endblock %}{% block area %}8-week guide{% endblock %}{% block page_name %}Week {{ week.number }}{% endblock %}{% block content %}
+<a class="back-link" href="{{ url_for('curriculum') }}">← All eight weeks</a><section class="weekly-hero"><div><span class="eyebrow">Week {{ week.number }} · {{ week.phase }}</span><h1>{{ week.title }}</h1><p>{{ week.focus }}</p></div><div><strong>{{ week.estimated_time }}</strong><span>{{ week.deliverables|length }} deliverables</span></div></section>{% include '_week_guide.html' %}{% if current_user.role == 'student' %}<div class="bottom-action"><a class="button button-dark" href="{{ url_for('student_week', week_number=week.number) }}">Open Week {{ week.number }} submission</a></div>{% endif %}
 {% endblock %}

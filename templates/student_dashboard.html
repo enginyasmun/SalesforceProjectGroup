@@ -1,40 +1,16 @@
 {% extends 'base.html' %}
-{% block title %}My learning | Salesforce Project Group{% endblock %}
+{% block title %}Student home | Project Group{% endblock %}{% block area %}Student portal{% endblock %}{% block page_name %}Home{% endblock %}
 {% block content %}
-<div class="welcome-grid">
-  <section class="card welcome-card">
-    <div><span class="eyebrow" style="color:#e59b7f">Student workspace</span><h1>Build one strong Salesforce story, week by week.</h1><p>Your next step is always shown here. Complete the guide, submit your evidence, and use instructor feedback to improve.</p></div>
-    <a class="button" href="{{ url_for('student_week', week_number=next_week or 8) }}">{% if next_week %}Continue Week {{ next_week }}{% else %}Review completed program{% endif %}</a>
-  </section>
-  <section class="card next-card">
-    {% if next_week %}
-      {% set next = weeks[next_week - 1] %}
-      <span class="week-circle">{{ '%02d'|format(next_week) }}</span>
-      <span class="eyebrow">Next step</span>
-      <h2>{{ next.title }}</h2>
-      <p>{{ next.focus }}</p>
-      <a class="text-link" href="{{ url_for('student_week', week_number=next_week) }}">Open weekly workspace →</a>
-    {% else %}
-      <span class="week-circle">✓</span><span class="eyebrow">Program complete</span><h2>All eight weeks are approved.</h2><p>Use the completed work to prepare for interviews and continue practicing your final story.</p>
-    {% endif %}
-  </section>
-</div>
-
-<section class="metric-grid">
-  <div class="card metric-card"><strong>{{ approved }}/8</strong><span>weeks approved</span></div>
-  <div class="card metric-card"><strong>{{ submitted }}</strong><span>weeks submitted</span></div>
-  <div class="card metric-card"><strong>{{ average_score if average_score is not none else '—' }}</strong><span>approved average score</span></div>
+<div class="welcome-line"><div><span class="eyebrow">Welcome, {{ current_user.name.split()[0] }}</span><h1>What do you need to do today?</h1><p>The portal is organized around your two main jobs.</p></div><a class="checklist-chip" href="{{ url_for('student_checklist') }}"><span>Checklist</span><strong>{{ approved }}/8 weeks approved</strong></a></div>
+<section class="primary-actions">
+  <a class="primary-action weekly-action" href="{{ url_for('student_week', week_number=next_week or 8) }}"><div class="action-number">01</div><div><span class="action-kicker">Weekly work</span><h2>{% if next_week %}Continue Week {{ next_week }}{% else %}Review completed work{% endif %}</h2><p>Follow the guide, prepare the required evidence, and submit it for instructor review.</p><b>Open weekly workspace →</b></div></a>
+  <a class="primary-action learning-action" href="{{ url_for('project_learning') }}"><div class="action-number">02</div><div><span class="action-kicker">Project learning</span><h2>{{ project.short_name if project else 'Project not assigned' }}</h2><p>{% if project %}You are currently on Step {{ project.current_step }} of {{ total_steps }}. Open the exact requirements, tasks, and deliverables.{% else %}Your instructor will assign the project and current step.{% endif %}</p><b>Open project learning →</b></div></a>
 </section>
-
-<div class="section-row"><div><h2>Your 8-week roadmap</h2><p>Open any week to view the guide, submission, score, and feedback.</p></div><a class="text-link" href="{{ url_for('curriculum') }}">View full curriculum →</a></div>
-<section class="week-roadmap">
-  {% for week in weeks %}
-    {% set item = by_week.get(week.number) %}
-    <a class="roadmap-item" href="{{ url_for('student_week', week_number=week.number) }}">
-      <span class="roadmap-index">{{ '%02d'|format(week.number) }}</span>
-      <span class="roadmap-copy"><small>{{ week.phase }}</small><strong>{{ week.title }}</strong><span>{{ week.interview }}</span></span>
-      <span class="status-pill {{ item.status if item else 'not-started' }}">{{ (item.status|replace('_',' ')|title) if item else 'Not started' }}</span>
-    </a>
-  {% endfor %}
+<section class="student-status-grid">
+  <article class="card progress-card"><div class="card-title"><div><span class="eyebrow">Project position</span><h3>Step {{ project.current_step if project else '—' }} of {{ total_steps }}</h3></div><span class="status-dot {{ project.status if project else 'not_started' }}"></span></div><div class="progress-track"><i style="width:{{ ((project.current_step / total_steps * 100) if project and total_steps else 0)|round }}%"></i></div><p>{{ project_status.get(project.status, 'Not assigned') if project else 'No project assigned' }}</p></article>
+  {% for cert in certs %}<article class="card cert-card"><span class="eyebrow">{{ cert.short_name }}</span><h3>{{ cert_status.get(cert.status or 'not_started') }}</h3><p>{% if cert.target_date %}Target: {{ cert.target_date }}{% elif cert.status == 'passed' %}Completed{% else %}No exam date set{% endif %}</p></article>{% endfor %}
+  <article class="card progress-card"><span class="eyebrow">Weekly training</span><h3>{{ approved }}/8 approved</h3><div class="progress-track"><i style="width:{{ (approved / 8 * 100)|round }}%"></i></div><p>{% if average_score is not none %}Average score: {{ average_score }}{% else %}No approved score yet{% endif %}</p></article>
 </section>
+<div class="section-row"><div><h2>Your 8-week work</h2><p>Open any week to see the guide, submission, score, and feedback.</p></div><a class="text-link" href="{{ url_for('curriculum') }}">View full guide →</a></div>
+<section class="compact-week-grid">{% for week in weeks %}{% set item=by_week.get(week.number) %}<a href="{{ url_for('student_week', week_number=week.number) }}" class="compact-week"><span>{{ '%02d'|format(week.number) }}</span><div><small>{{ week.phase }}</small><strong>{{ week.title }}</strong></div><em class="status-pill {{ item.status if item else 'not-started' }}">{{ (item.status|replace('_',' ')|title) if item else 'Not started' }}</em></a>{% endfor %}</section>
 {% endblock %}
