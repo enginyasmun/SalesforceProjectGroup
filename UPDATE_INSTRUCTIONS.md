@@ -1,4 +1,4 @@
-# Modern Simple Design Update
+# Modern Simple Design Update v3.1
 
 This package is a complete repository replacement for the application code. It does not include the production SQLite database.
 
@@ -32,6 +32,7 @@ cd /home/enginproject/SalesforceProjectGroup
 git pull origin main
 workon projectgroup-env
 pip install -r requirements.txt
+python -m py_compile app.py curriculum_content.py smoke_test.py
 python seed.py
 python smoke_test.py
 ```

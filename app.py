@@ -111,26 +111,44 @@ def get_db():
 
 
 def query_one(sql, params=()):
-    with get_db() as conn:
+    conn = get_db()
+    try:
         return conn.execute(sql, params).fetchone()
+    finally:
+        conn.close()
 
 
 def query_all(sql, params=()):
-    with get_db() as conn:
+    conn = get_db()
+    try:
         return conn.execute(sql, params).fetchall()
+    finally:
+        conn.close()
 
 
 def execute(sql, params=()):
-    with get_db() as conn:
+    conn = get_db()
+    try:
         cur = conn.execute(sql, params)
         conn.commit()
         return cur.lastrowid
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
 
 
 def init_db():
-    with get_db() as conn:
+    conn = get_db()
+    try:
         conn.executescript((BASE_DIR / "schema.sql").read_text(encoding="utf-8"))
         conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
     bootstrap_admin()
 
 

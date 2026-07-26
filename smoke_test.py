@@ -9,17 +9,17 @@ import os
 import tempfile
 from pathlib import Path
 
-os.environ.setdefault("SECRET_KEY", "smoke-test-secret")
-os.environ.setdefault("ADMIN_NAME", "Test Admin")
-os.environ.setdefault("ADMIN_EMAIL", "admin@example.com")
-os.environ.setdefault("ADMIN_PASSWORD", "AdminPass123!")
-os.environ.setdefault("COOKIE_SECURE", "0")
+os.environ["SECRET_KEY"] = "smoke-test-secret"
+os.environ["ADMIN_NAME"] = "Test Admin"
+os.environ["ADMIN_EMAIL"] = "admin@example.com"
+os.environ["ADMIN_PASSWORD"] = "AdminPass123!"
+os.environ["COOKIE_SECURE"] = "0"
 
 import app as portal
 
 
 def run() -> None:
-    with tempfile.TemporaryDirectory() as temp_dir:
+    with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as temp_dir:
         root = Path(temp_dir)
         portal.DB_PATH = root / "test.db"
         portal.UPLOAD_DIR = root / "uploads"

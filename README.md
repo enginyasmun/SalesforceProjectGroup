@@ -1,4 +1,4 @@
-# Salesforce Project Group Portal
+# Salesforce Project Group Portal v3.1
 
 A simple, modern Flask learning portal for an 8-week post-bootcamp Salesforce interview-readiness program.
 
@@ -39,7 +39,7 @@ Open `http://127.0.0.1:5000`.
 ## Validate before deployment
 
 ```bash
-python -m py_compile app.py curriculum_content.py
+python -m py_compile app.py curriculum_content.py smoke_test.py
 python seed.py
 python smoke_test.py
 ```
@@ -88,3 +88,10 @@ Expected result:
 ```json
 {"database":"ready","status":"ok","version":"3.0"}
 ```
+
+
+## v3.1 reliability fixes
+
+- Smoke tests always use isolated test administrator settings.
+- SQLite connections are explicitly closed after every query and transaction.
+- Temporary smoke-test files clean up safely on PythonAnywhere.
