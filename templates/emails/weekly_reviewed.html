@@ -1,0 +1,24 @@
+{% extends 'emails/base.html' %}
+{% block email_content %}
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-top:8px;">
+  <tr>
+    <td style="padding:18px;background:#f8faf2;border:1px solid #dfe6cf;border-radius:16px;">
+      <div style="font-size:13px;color:#667331;font-weight:800;margin-bottom:10px;">Weekly review</div>
+      <div style="font-size:24px;font-weight:800;margin-bottom:6px;">Week {{ week_number }} was reviewed</div>
+      <div style="font-size:15px;color:#60655c;line-height:1.6;">Status: <strong>{{ review_status }}</strong>{% if score is not none %} · Score: <strong>{{ score }}</strong>{% endif %}</div>
+    </td>
+  </tr>
+</table>
+{% if feedback %}
+<div style="margin-top:18px;">
+  <div style="font-weight:800;margin-bottom:6px;">Instructor feedback</div>
+  <div style="color:#60655c;line-height:1.7;white-space:pre-wrap;">{{ feedback }}</div>
+</div>
+{% endif %}
+{% if revision_actions %}
+<div style="margin-top:18px;">
+  <div style="font-weight:800;margin-bottom:6px;">Required changes</div>
+  <div style="color:#60655c;line-height:1.7;white-space:pre-wrap;">{{ revision_actions }}</div>
+</div>
+{% endif %}
+{% endblock %}

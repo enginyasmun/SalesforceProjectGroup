@@ -1,72 +1,27 @@
-# Salesforce Project Group Portal v5
+# Salesforce Project Group v5.2 patch
 
-A Flask portal for Salesforce bootcamp graduates. Students use it to complete project steps, create weekly presentations, submit presentation homework, receive instructor grading, and track certifications.
+This patch focuses on 3 things:
 
-## Main workflows
+1. Better-designed HTML emails for students
+2. Fixes for the presentation request screen
+3. Weekly homework scheduling with start and due dates
 
-### Weekly work
-Every week has two required deliverables:
+## Files included
 
-1. Complete the assigned project step and submit evidence.
-2. Create and upload a presentation about the week's topic.
+- `static/v52-fixes.css`
+- `templates/manage_homework.html`
+- `templates/manage_week_schedule.html`
+- `templates/emails/base.html`
+- `templates/emails/homework_assigned.html`
+- `templates/emails/weekly_due_set.html`
+- `templates/emails/weekly_reviewed.html`
+- `templates/emails/homework_reviewed.html`
+- `templates/emails/account_approved.html`
+- `sql_v52_patch.sql`
+- `BACKEND_PATCH_NOTES.md`
 
-The instructor reviews both requirements separately, provides separate comments, applies the 100-point rubric, and approves or returns the week for revision.
+## Important
 
-### Presentation homework
-Instructors can create presentation requests, assign one or many students, add a due date, attach an example deck, and provide exact requirements. Students submit PowerPoint, PDF, or a shareable link. The instructor scores, comments, approves, or requests revision.
-
-### Notifications and email
-The portal always creates in-app notifications for:
-
-- New presentation homework
-- Weekly grading or review
-- Presentation-homework grading or review
-- Project-step changes
-- Certification changes
-- Registration decisions
-
-Email is optional and uses Gmail SMTP. Email failure never blocks the portal action.
-
-### Avatars
-Students choose a built-in avatar or upload a real PNG, JPG, JPEG, or WebP picture during registration. They can change it later from Account.
-
-## PythonAnywhere persistent folders
-
-```bash
-mkdir -p /home/enginproject/project-group-data/uploads
-mkdir -p /home/enginproject/project-group-data/avatars
-```
-
-Use these WSGI environment paths:
-
-```python
-os.environ["PROJECT_GROUP_DATABASE"] = "/home/enginproject/project-group-data/project_group.db"
-os.environ["PROJECT_GROUP_UPLOADS"] = "/home/enginproject/project-group-data/uploads"
-os.environ["PROJECT_GROUP_AVATARS"] = "/home/enginproject/project-group-data/avatars"
-```
-
-## Email setup
-
-For a free PythonAnywhere account, Gmail SMTP is supported. Use a Google App Password, not your normal Gmail password.
-
-Add the values from `pythonanywhere_wsgi.py.example`, then change:
-
-```python
-os.environ["EMAIL_ENABLED"] = "1"
-```
-
-After reloading, open Account and click **Send test notification**.
-
-## Validation
-
-```bash
-python -m py_compile app.py curriculum_content.py project_content.py seed.py smoke_test.py email_test.py
-python seed.py
-python smoke_test.py
-```
-
-Expected result:
-
-```text
-PASS: avatars, dual weekly requirements, presentation homework, grading, notifications, and tracking all work.
-```
+This is a patch pack to apply on top of your current v5 codebase.
+The HTML templates and CSS are ready to upload.
+The backend notes explain the route, database, and notification additions needed in `app.py` and `seed.py`.

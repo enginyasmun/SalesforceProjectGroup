@@ -1,0 +1,281 @@
+/* v5.2 UI fixes: presentation request page, weekly scheduling, email-preview-friendly visual polish */
+
+.homework-shell{
+  display:grid;
+  grid-template-columns:minmax(0,1.05fr) minmax(360px,.95fr);
+  gap:24px;
+  align-items:start;
+}
+
+.homework-create-card,
+.homework-list-card,
+.week-schedule-card{
+  padding:28px;
+}
+
+.homework-create-card{
+  display:grid;
+  gap:18px;
+}
+
+.homework-create-card h2,
+.homework-list-card h2,
+.week-schedule-card h2{
+  margin:0;
+  font-size:36px;
+  line-height:1.05;
+  letter-spacing:-.03em;
+}
+
+.homework-intro{
+  display:grid;
+  gap:8px;
+  margin-bottom:6px;
+}
+
+.homework-intro p{
+  margin:0;
+  color:var(--muted);
+}
+
+.segment-label{
+  color:#6b773d;
+  font-size:11px;
+  font-weight:900;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+}
+
+.form-section{
+  display:grid;
+  gap:14px;
+  padding:18px;
+  border:1px solid var(--line);
+  border-radius:18px;
+  background:#fafbf7;
+}
+
+.form-section h3{
+  margin:0;
+  font-size:18px;
+}
+
+.assignment-grid{
+  display:grid;
+  gap:12px;
+  max-height:360px;
+  overflow:auto;
+  padding-right:4px;
+}
+
+.student-pick{
+  display:grid !important;
+  grid-template-columns:28px 54px minmax(0,1fr);
+  align-items:center;
+  gap:14px;
+  padding:14px 16px;
+  border:1px solid var(--line);
+  border-radius:16px;
+  background:#fff;
+}
+
+.student-pick input{
+  width:18px;
+  min-height:18px;
+}
+
+.student-pick img{
+  width:46px;
+  height:46px;
+  object-fit:cover;
+  border-radius:14px;
+}
+
+.student-pick strong,
+.student-pick small{
+  display:block;
+}
+
+.student-pick small{
+  color:var(--muted);
+}
+
+.student-pick.select-all{
+  background:var(--lime-soft);
+  border-color:#cee497;
+}
+
+.homework-submit-row{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  position:sticky;
+  bottom:0;
+  padding-top:10px;
+  background:linear-gradient(to top, var(--paper) 70%, rgba(242,243,237,0));
+}
+
+.homework-submit-row .button{
+  flex:1;
+}
+
+.homework-list-card{
+  min-height:320px;
+}
+
+.homework-empty{
+  display:grid;
+  place-items:center;
+  min-height:220px;
+  border:1px dashed var(--line);
+  border-radius:18px;
+  background:#fbfbf9;
+  text-align:center;
+  color:var(--muted);
+}
+
+.homework-request-card{
+  display:grid;
+  gap:12px;
+  padding:20px;
+  border:1px solid var(--line);
+  border-radius:18px;
+  background:#fff;
+  text-decoration:none;
+}
+
+.homework-request-card h3{
+  margin:0;
+  font-size:20px;
+}
+
+.homework-meta{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+}
+
+.meta-chip{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:7px 10px;
+  border-radius:999px;
+  background:#f1f3eb;
+  color:#50564b;
+  font-size:12px;
+  font-weight:800;
+}
+
+.meta-chip.due{
+  background:#fff0c9;
+  color:#73531b;
+}
+
+.meta-chip.open{
+  background:var(--lime-soft);
+  color:#3f5f1e;
+}
+
+.meta-chip.closed{
+  background:#eceee7;
+  color:#60655c;
+}
+
+.week-schedule-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:16px;
+}
+
+.week-schedule-row{
+  display:grid;
+  gap:14px;
+  padding:18px;
+  border:1px solid var(--line);
+  border-radius:18px;
+  background:#fff;
+}
+
+.week-schedule-row h3{
+  margin:0;
+  font-size:22px;
+}
+
+.week-date-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+}
+
+.week-date-note{
+  color:var(--muted);
+  font-size:13px;
+}
+
+.week-open-state{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  font-weight:800;
+}
+
+.dual-deadlines{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  margin:14px 0 0;
+}
+
+.deadline-panel{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:10px 12px;
+  border-radius:14px;
+  background:#fff;
+  border:1px solid var(--line);
+  font-size:13px;
+  font-weight:800;
+}
+
+.deadline-panel strong{
+  font-size:13px;
+}
+
+.email-preview-callout{
+  padding:18px;
+  border:1px solid #d8dfcc;
+  border-radius:18px;
+  background:#fbfdf6;
+}
+
+.email-preview-callout strong{
+  display:block;
+  margin-bottom:6px;
+}
+
+@media(max-width:1050px){
+  .homework-shell{
+    grid-template-columns:1fr;
+  }
+}
+
+@media(max-width:680px){
+  .week-schedule-grid,
+  .week-date-grid{
+    grid-template-columns:1fr;
+  }
+
+  .homework-create-card,
+  .homework-list-card,
+  .week-schedule-card{
+    padding:20px;
+  }
+
+  .homework-create-card h2,
+  .homework-list-card h2,
+  .week-schedule-card h2{
+    font-size:30px;
+  }
+}

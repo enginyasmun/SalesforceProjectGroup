@@ -1,0 +1,21 @@
+{% extends 'emails/base.html' %}
+{% block email_content %}
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-top:8px;">
+  <tr>
+    <td style="padding:18px;background:#f8faf2;border:1px solid #dfe6cf;border-radius:16px;">
+      <div style="font-size:13px;color:#171913;font-weight:800;margin-bottom:10px;">Presentation request</div>
+      <div style="font-size:24px;font-weight:800;margin-bottom:6px;">{{ title }}</div>
+      <div style="font-size:15px;color:#60655c;line-height:1.6;">{{ topic }}</div>
+      {% if due_on %}<div style="margin-top:12px;font-size:13px;font-weight:800;color:#73531b;">Due date: {{ due_on }}</div>{% endif %}
+    </td>
+  </tr>
+</table>
+<div style="margin-top:18px;">
+  <div style="font-weight:800;margin-bottom:6px;">Instructions</div>
+  <div style="color:#60655c;line-height:1.7;white-space:pre-wrap;">{{ instructions }}</div>
+</div>
+<div style="margin-top:18px;">
+  <div style="font-weight:800;margin-bottom:6px;">Presentation requirements</div>
+  <div style="color:#60655c;line-height:1.7;white-space:pre-wrap;">{{ requirements }}</div>
+</div>
+{% endblock %}
