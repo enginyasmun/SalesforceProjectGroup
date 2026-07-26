@@ -9,7 +9,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
   <link rel="icon" href="{{ url_for('static', filename='favicon.svg') }}" type="image/svg+xml">
-  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css', v='5.0') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css', v='5.1') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='dashboard-fix.css', v='5.1') }}">
 </head>
 <body class="{% if current_user %}portal-body{% else %}public-body{% endif %}">
 {% if current_user %}
@@ -72,6 +73,6 @@
 </main>
 <footer class="public-footer"><strong>Salesforce Project Group</strong><span>Complete project steps · Present weekly work · Prepare for interviews</span></footer>
 {% endif %}
-<script src="{{ url_for('static', filename='app.js', v='5.0') }}" defer></script>
+<script src="{{ url_for('static', filename='app.js', v='5.1') }}" defer></script>
 </body>
 </html>
