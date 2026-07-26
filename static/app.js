@@ -9,3 +9,13 @@
   });
   setTimeout(() => document.querySelectorAll('.flash').forEach((item) => item.remove()), 6000);
 })();
+
+document.querySelectorAll('[data-select-all-students]').forEach((toggle) => {
+  toggle.addEventListener('change', () => {
+    const form = toggle.closest('form');
+    if (!form) return;
+    form.querySelectorAll('input[name="student_ids"]').forEach((box) => {
+      box.checked = toggle.checked;
+    });
+  });
+});

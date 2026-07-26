@@ -143,3 +143,47 @@ CURRICULUM = [
         "quality_gate": ["I answer with specific project evidence.", "I never present training as paid experience.", "I can defend choices and discuss improvements honestly."],
     },
 ]
+
+PRESENTATION_GUIDES = {
+    1: {
+        "topic": "Introduce the project and your real contribution",
+        "slides": ["Project and business problem", "Users and process", "What I personally worked on", "Evidence of my work", "What I learned and would improve"],
+    },
+    2: {
+        "topic": "Requirements, stakeholders, user stories, and acceptance criteria",
+        "slides": ["Business request", "Stakeholders", "Key requirements and rules", "User stories", "Acceptance criteria and open questions"],
+    },
+    3: {
+        "topic": "Data model, security, data quality, reports, and dashboards",
+        "slides": ["Object model and ERD", "Relationship decisions", "Security model", "Validation and duplicate rules", "Reports, dashboard, and business value"],
+    },
+    4: {
+        "topic": "Apex design, bulkification, error handling, batch Apex, and testing",
+        "slides": ["Technical requirement", "Trigger and handler design", "Bulk and error-handling strategy", "Test scenarios and results", "Batch lifecycle and lessons"],
+    },
+    5: {
+        "topic": "Flow, approvals, callouts, and REST integrations",
+        "slides": ["Automation problem", "Flow or Apex decision", "Integration sequence", "Security and failure handling", "Result and testing"],
+    },
+    6: {
+        "topic": "LWC components and Experience Cloud user journeys",
+        "slides": ["User experience goal", "Component map", "Data access and navigation", "Main user journey", "Security, errors, and improvements"],
+    },
+    7: {
+        "topic": "Complete Salesforce project presentation",
+        "slides": ["Business problem", "Users and requirements", "Solution architecture", "Key features", "Testing and delivery", "Value, contribution, and lessons"],
+    },
+    8: {
+        "topic": "Interview defense of the project",
+        "slides": ["60-second project story", "Most important design decision", "Hardest challenge", "Testing and quality", "What I would improve", "Questions I can confidently answer"],
+    },
+}
+
+for week in CURRICULUM:
+    presentation = PRESENTATION_GUIDES[week["number"]]
+    week["presentation_topic"] = presentation["topic"]
+    week["presentation_slides"] = presentation["slides"]
+    week["presentation_requirement"] = (
+        "Create and upload a short presentation about this week's project work. "
+        "Use the suggested slide structure, include evidence, and clearly identify your personal contribution."
+    )

@@ -7,7 +7,18 @@ os.environ["ADMIN_EMAIL"] = "YOUR_ADMIN_EMAIL"
 os.environ["ADMIN_PASSWORD"] = "YOUR_TEMPORARY_ADMIN_PASSWORD"
 os.environ["PROJECT_GROUP_DATABASE"] = "/home/enginproject/project-group-data/project_group.db"
 os.environ["PROJECT_GROUP_UPLOADS"] = "/home/enginproject/project-group-data/uploads"
+os.environ["PROJECT_GROUP_AVATARS"] = "/home/enginproject/project-group-data/avatars"
 os.environ["COOKIE_SECURE"] = "1"
+os.environ["APP_BASE_URL"] = "https://enginproject.pythonanywhere.com"
+
+# Email alerts. Fill these values, then change EMAIL_ENABLED to 1.
+os.environ["EMAIL_ENABLED"] = "0"
+os.environ["SMTP_HOST"] = "smtp.gmail.com"
+os.environ["SMTP_PORT"] = "587"
+os.environ["SMTP_USE_TLS"] = "1"
+os.environ["SMTP_USERNAME"] = "YOUR_GMAIL_ADDRESS"
+os.environ["SMTP_PASSWORD"] = "YOUR_16_CHARACTER_GOOGLE_APP_PASSWORD"
+os.environ["EMAIL_FROM"] = "YOUR_GMAIL_ADDRESS"
 
 project_path = "/home/enginproject/SalesforceProjectGroup"
 if project_path not in sys.path:

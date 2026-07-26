@@ -1,48 +1,55 @@
-# Update instructions
+# Update existing PythonAnywhere deployment to v5
 
-## 1. Back up the production database
+## 1. Back up the database
 
 ```bash
 cp /home/enginproject/project-group-data/project_group.db \
-   /home/enginproject/project-group-data/project_group-backup-before-v4.db
+   /home/enginproject/project-group-data/project_group-backup-before-v5.db
 ```
 
-## 2. Upload the contents of this package to the GitHub repository root
-
-The repository must contain `app.py`, `project_content.py`, `curriculum_content.py`, `templates`, and `static` at the root.
-
-Do not upload a `.db` file or the production uploads folder.
-
-## 3. Pull and validate on PythonAnywhere
+## 2. Pull the GitHub update
 
 ```bash
 cd /home/enginproject/SalesforceProjectGroup
 git pull origin main
 workon projectgroup-env
 pip install -r requirements.txt
-python -m py_compile app.py curriculum_content.py project_content.py seed.py smoke_test.py
+mkdir -p /home/enginproject/project-group-data/uploads
+mkdir -p /home/enginproject/project-group-data/avatars
+python -m py_compile app.py curriculum_content.py project_content.py seed.py smoke_test.py email_test.py
 python seed.py
 python smoke_test.py
 ```
 
-Expected test result:
+## 3. Update the WSGI file
 
-```text
-PASS: portal, project learning, weekly submissions, grading, certifications, and student tracking all work.
+Add:
+
+```python
+os.environ["PROJECT_GROUP_AVATARS"] = "/home/enginproject/project-group-data/avatars"
+os.environ["APP_BASE_URL"] = "https://enginproject.pythonanywhere.com"
 ```
 
-## 4. Reload
+To enable Gmail email alerts, also add:
 
-Open the PythonAnywhere Web tab and click Reload.
+```python
+os.environ["EMAIL_ENABLED"] = "1"
+os.environ["SMTP_HOST"] = "smtp.gmail.com"
+os.environ["SMTP_PORT"] = "587"
+os.environ["SMTP_USE_TLS"] = "1"
+os.environ["SMTP_USERNAME"] = "YOUR_GMAIL_ADDRESS"
+os.environ["SMTP_PASSWORD"] = "YOUR_16_CHARACTER_GOOGLE_APP_PASSWORD"
+os.environ["EMAIL_FROM"] = "YOUR_GMAIL_ADDRESS"
+```
 
-Health check:
+Reload the web app after saving the WSGI file.
+
+## 4. Verify
+
+Open:
 
 ```text
 https://enginproject.pythonanywhere.com/health
 ```
 
-Expected response:
-
-```json
-{"database":"ready","status":"ok","version":"4.0"}
-```
+Expected version: `5.0`.
