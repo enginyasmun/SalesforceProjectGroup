@@ -1,11 +1,25 @@
 {% extends 'base.html' %}
 {% block content %}
-<section class="dashboard-header"><div><span class="eyebrow">Student workspace</span><h1>Build the story you will defend in an interview.</h1><p>Complete each week in sequence and revise your work using instructor feedback.</p></div><div class="progress-ring"><strong>{{ approved }}/8</strong><span>approved</span></div></section>
-<section class="metric-row"><div><strong>{{ submitted }}</strong><span>weeks submitted</span></div><div><strong>{{ approved }}</strong><span>weeks approved</span></div><div><strong>{{ 8-approved }}</strong><span>weeks remaining</span></div></section>
+<section class="dashboard-header">
+  <div><span class="eyebrow">Student workspace</span><h1>Build the story you will defend in an interview.</h1><p>Use the guided study steps, submit evidence, and revise the work using instructor feedback.</p></div>
+  <div class="progress-ring"><strong>{{ approved }}/8</strong><span>approved</span></div>
+</section>
+<section class="metric-row four">
+  <div><strong>{{ submitted }}</strong><span>weeks submitted</span></div>
+  <div><strong>{{ approved }}</strong><span>weeks approved</span></div>
+  <div><strong>{{ average_score if average_score is not none else '—' }}</strong><span>approved average</span></div>
+  {% if next_week %}<a href="{{ url_for('student_week', week_number=next_week) }}"><strong>{{ '%02d'|format(next_week) }}</strong><span>continue next week →</span></a>{% else %}<div><strong>✓</strong><span>program complete</span></div>{% endif %}
+</section>
+<section class="student-actions"><a class="button" href="{{ url_for('curriculum') }}">Open full curriculum</a><a class="button button-quiet" href="{{ url_for('samples') }}">Review presentation samples</a></section>
 <section class="week-list">
   {% for week in weeks %}
     {% set item = by_week.get(week.number) %}
-    <a class="week-row" href="{{ url_for('student_week', week_number=week.number) }}"><span class="week-index">{{ '%02d'|format(week.number) }}</span><span class="week-main"><small>{{ week.phase }}</small><strong>{{ week.title }}</strong><em>{{ week.interview }}</em></span><span class="status-pill {{ item.status if item else 'not-started' }}">{{ (item.status|replace('_',' ')|title) if item else 'Not started' }}</span></a>
+    <a class="week-row" href="{{ url_for('student_week', week_number=week.number) }}">
+      <span class="week-index">{{ '%02d'|format(week.number) }}</span>
+      <span class="week-main"><small>{{ week.phase }}</small><strong>{{ week.title }}</strong><em>{{ week.steps|length }} guided steps · {{ week.interview }}</em></span>
+      <span class="week-score">{% if item and item.total_score is not none %}<strong>{{ item.total_score|round(1) }}</strong><small>/100</small>{% endif %}</span>
+      <span class="status-pill {{ item.status if item else 'not-started' }}">{{ (item.status|replace('_',' ')|title) if item else 'Not started' }}</span>
+    </a>
   {% endfor %}
 </section>
 {% endblock %}

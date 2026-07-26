@@ -14,6 +14,8 @@ from flask import (
 )
 from werkzeug.utils import secure_filename
 
+from curriculum_content import CURRICULUM, RUBRIC
+
 BASE_DIR = Path(__file__).resolve().parent
 DB_PATH = Path(os.environ.get("PROJECT_GROUP_DATABASE", BASE_DIR / "project_group.db"))
 UPLOAD_DIR = Path(os.environ.get("PROJECT_GROUP_UPLOADS", BASE_DIR / "uploads"))
@@ -30,89 +32,8 @@ app.config["SESSION_COOKIE_SECURE"] = os.environ.get("COOKIE_SECURE", "0") == "1
 
 PASSWORD_ITERATIONS = 260_000
 ALLOWED_EXTENSIONS = {"pdf", "doc", "docx", "ppt", "pptx", "txt", "md", "png", "jpg", "jpeg", "zip"}
-
-WEEKS = [
-    {
-        "number": 1,
-        "phase": "Position the experience",
-        "title": "Turn a Bootcamp Project Into Real Experience",
-        "focus": "Understand why the project matters and learn to describe your contribution honestly and confidently.",
-        "topics": ["Project ownership", "Business problem", "Your role", "Interview-ready project summary"],
-        "deliverables": ["60-second project introduction", "Personal responsibility statement", "Project evidence inventory"],
-        "interview": "Tell me about the Salesforce project you worked on.",
-        "prompt": "Explain the business problem, users, your responsibilities, and the result without presenting the project as paid employment.",
-    },
-    {
-        "number": 2,
-        "phase": "Requirement understanding",
-        "title": "Discover the Real Business Need",
-        "focus": "Move beyond requested features and identify the business problem, stakeholders, constraints, and success criteria.",
-        "topics": ["Stakeholder questions", "Current-state pain points", "Scope boundaries", "Acceptance criteria"],
-        "deliverables": ["Discovery question set", "Problem statement", "Stakeholder and constraint map"],
-        "interview": "How do you gather and clarify requirements?",
-        "prompt": "Show how you would challenge an unclear request and turn it into an actionable requirement.",
-    },
-    {
-        "number": 3,
-        "phase": "Requirement analysis",
-        "title": "Convert Requirements Into Salesforce Language",
-        "focus": "Translate business language into user stories, process steps, data needs, security needs, and testable outcomes.",
-        "topics": ["User stories", "Process mapping", "Data relationships", "Security questions", "Definition of done"],
-        "deliverables": ["Three user stories", "High-level process map", "Acceptance criteria and edge cases"],
-        "interview": "How do you make sure a requirement is ready for development?",
-        "prompt": "Explain what must be known before configuration or development starts.",
-    },
-    {
-        "number": 4,
-        "phase": "Research skills",
-        "title": "Research Before You Recommend",
-        "focus": "Use official documentation, release notes, trusted community sources, and small comparisons to support a technical decision.",
-        "topics": ["Research questions", "Source quality", "Option comparison", "Evidence-based recommendation"],
-        "deliverables": ["Research brief", "Source list", "Options and trade-offs", "Five-minute research presentation"],
-        "interview": "How do you approach a Salesforce feature you have never used before?",
-        "prompt": "Describe your research method, how you validate sources, and how you decide when you know enough.",
-    },
-    {
-        "number": 5,
-        "phase": "Building theory",
-        "title": "Design the Solution Before Building",
-        "focus": "Create a defensible Salesforce solution design without performing practical implementation yet.",
-        "topics": ["Standard versus custom", "Data model", "Security model", "Automation selection", "Integration boundaries"],
-        "deliverables": ["Solution architecture one-pager", "Object relationship sketch", "Automation decision table"],
-        "interview": "Why did you choose Flow, Apex, or another Salesforce capability?",
-        "prompt": "Defend your design using maintainability, security, scale, and user experience.",
-    },
-    {
-        "number": 6,
-        "phase": "Building theory",
-        "title": "Plan Quality, Testing, and Delivery",
-        "focus": "Explain how a professional team would build, test, deploy, document, and support the proposed solution.",
-        "topics": ["Build sequence", "Test scenarios", "Data quality", "Deployment planning", "Risk management"],
-        "deliverables": ["Implementation plan", "Test scenario matrix", "Risk and mitigation register"],
-        "interview": "How would you safely deliver this solution to production?",
-        "prompt": "Walk through development order, testing, deployment, rollback, and post-release checks.",
-    },
-    {
-        "number": 7,
-        "phase": "Presentation skills",
-        "title": "Present the Project as a Consultant",
-        "focus": "Build a clear story that starts with business value and uses technical detail only where it supports the decision.",
-        "topics": ["Executive opening", "Problem-solution-result story", "Architecture visuals", "Demo narration", "Q&A control"],
-        "deliverables": ["Eight-slide project deck", "Seven-minute presentation", "Question-and-answer preparation"],
-        "interview": "Present a Salesforce solution you designed.",
-        "prompt": "Lead with the problem and value, then explain the design, decisions, risks, and result.",
-    },
-    {
-        "number": 8,
-        "phase": "Interview readiness",
-        "title": "Defend Your Decisions in a Salesforce Interview",
-        "focus": "Connect the full project story to behavioral, admin, developer, and solution-design interview questions.",
-        "topics": ["STAR answers", "Technical defense", "Honest experience positioning", "Mock interview", "Improvement plan"],
-        "deliverables": ["Final project story", "Ten interview answers", "Mock interview scorecard", "30-day improvement plan"],
-        "interview": "What did you personally do, what was difficult, and what would you improve?",
-        "prompt": "Answer with specific decisions, evidence, lessons, and clear ownership of your contribution.",
-    },
-]
+WEEKS = CURRICULUM
+_SCHEMA_READY = False
 
 SAMPLES = {
     "project": {
@@ -200,12 +121,40 @@ def bootstrap_admin():
         )
 
 
+def ensure_column(table, column, definition):
+    columns = {row["name"] for row in query_all(f"PRAGMA table_info({table})")}
+    if column not in columns:
+        execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
+
+
+def migrate_schema():
+    additions = {
+        "submitted_at": "TEXT",
+        "revision_number": "INTEGER NOT NULL DEFAULT 0",
+        "score_business": "REAL",
+        "score_evidence": "REAL",
+        "score_salesforce": "REAL",
+        "score_communication": "REAL",
+        "score_professionalism": "REAL",
+        "total_score": "REAL",
+        "strengths": "TEXT",
+        "revision_actions": "TEXT",
+    }
+    for column, definition in additions.items():
+        ensure_column("submissions", column, definition)
+
+
 def ensure_schema():
+    global _SCHEMA_READY
+    if _SCHEMA_READY:
+        return
     required = query_one("SELECT name FROM sqlite_master WHERE type='table' AND name='users'")
     if not required:
         init_db()
     else:
+        migrate_schema()
         bootstrap_admin()
+    _SCHEMA_READY = True
 
 
 def current_user():
@@ -220,6 +169,31 @@ def csrf_token():
         token = secrets.token_urlsafe(32)
         session["_csrf_token"] = token
     return token
+
+
+def user_can_access_student(student_id, user=None):
+    user = user or current_user()
+    if not user:
+        return False
+    if user["role"] == "student":
+        return user["id"] == student_id
+    if user["is_admin"]:
+        return True
+    student = query_one("SELECT selected_instructor_id FROM users WHERE id=? AND role='student'", (student_id,))
+    return bool(student and student["selected_instructor_id"] == user["id"])
+
+
+def parse_score(name):
+    value = request.form.get(name, "").strip()
+    if value == "":
+        return None
+    try:
+        score = float(value)
+    except ValueError:
+        raise ValueError("Scores must be numeric.")
+    if score < 0 or score > 20:
+        raise ValueError("Each rubric score must be between 0 and 20.")
+    return score
 
 
 @app.before_request
@@ -238,6 +212,7 @@ def inject_globals():
         "current_user": current_user(),
         "csrf_token": csrf_token(),
         "weeks": WEEKS,
+        "rubric": RUBRIC,
         "current_year": date.today().year,
     }
 
@@ -286,6 +261,20 @@ def student_required(view):
             abort(403)
         if user["approval_status"] != "approved" or not user["is_active"]:
             return redirect(url_for("pending_account"))
+        return view(*args, **kwargs)
+    return wrapped
+
+
+def program_access_required(view):
+    @wraps(view)
+    def wrapped(*args, **kwargs):
+        user = current_user()
+        if not user:
+            return redirect(url_for("login"))
+        if user["role"] == "student" and (user["approval_status"] != "approved" or not user["is_active"]):
+            return redirect(url_for("pending_account"))
+        if user["role"] == "instructor" and not user["is_active"]:
+            abort(403)
         return view(*args, **kwargs)
     return wrapped
 
@@ -438,6 +427,29 @@ def download_sample(sample_key):
     )
 
 
+@app.route("/curriculum")
+@program_access_required
+def curriculum():
+    user = current_user()
+    submissions = []
+    by_week = {}
+    if user["role"] == "student":
+        submissions = query_all("SELECT * FROM submissions WHERE student_id=? ORDER BY week_number", (user["id"],))
+        by_week = {row["week_number"]: row for row in submissions}
+    return render_template("curriculum.html", by_week=by_week)
+
+
+@app.route("/curriculum/week/<int:week_number>")
+@program_access_required
+def curriculum_week(week_number):
+    if not 1 <= week_number <= 8:
+        abort(404)
+    user = current_user()
+    if user["role"] == "student":
+        return redirect(url_for("student_week", week_number=week_number))
+    return render_template("curriculum_week.html", week=WEEKS[week_number - 1])
+
+
 @app.route("/student")
 @student_required
 def student_dashboard():
@@ -446,7 +458,17 @@ def student_dashboard():
     by_week = {row["week_number"]: row for row in submissions}
     approved = sum(1 for row in submissions if row["status"] == "approved")
     submitted = sum(1 for row in submissions if row["status"] in {"submitted", "under_review", "revision", "approved"})
-    return render_template("student_dashboard.html", by_week=by_week, approved=approved, submitted=submitted)
+    approved_scores = [row["total_score"] for row in submissions if row["status"] == "approved" and row["total_score"] is not None]
+    average_score = round(sum(approved_scores) / len(approved_scores), 1) if approved_scores else None
+    next_week = next((week["number"] for week in WEEKS if not by_week.get(week["number"]) or by_week[week["number"]]["status"] != "approved"), None)
+    return render_template(
+        "student_dashboard.html",
+        by_week=by_week,
+        approved=approved,
+        submitted=submitted,
+        average_score=average_score,
+        next_week=next_week,
+    )
 
 
 @app.route("/student/week/<int:week_number>", methods=["GET", "POST"])
@@ -458,6 +480,9 @@ def student_week(week_number):
     week = WEEKS[week_number - 1]
     submission = query_one("SELECT * FROM submissions WHERE student_id=? AND week_number=?", (user["id"], week_number))
     if request.method == "POST":
+        if submission and submission["status"] == "approved":
+            flash("This week is approved. Ask your instructor to reopen it before making changes.", "warning")
+            return redirect(request.url)
         action = request.form.get("action", "draft")
         status = "submitted" if action == "submit" else "draft"
         project_story = request.form.get("project_story", "").strip()
@@ -466,6 +491,9 @@ def student_week(week_number):
         design_notes = request.form.get("design_notes", "").strip()
         presentation_url = request.form.get("presentation_url", "").strip()
         reflection = request.form.get("reflection", "").strip()
+        if status == "submitted" and not project_story:
+            flash("Add the main weekly answer before submitting for review.", "danger")
+            return redirect(request.url)
         file_name = submission["file_name"] if submission else None
         uploaded = request.files.get("file")
         if uploaded and uploaded.filename:
@@ -475,25 +503,37 @@ def student_week(week_number):
             safe = secure_filename(uploaded.filename)
             file_name = f"{user['id']}_{week_number}_{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}_{safe}"
             uploaded.save(UPLOAD_DIR / file_name)
+        now = now_iso()
+        submitted_at = now if status == "submitted" else (submission["submitted_at"] if submission else None)
+        revision_number = submission["revision_number"] if submission else 0
+        if submission and submission["status"] == "revision" and status == "submitted":
+            revision_number += 1
         if submission:
             execute(
                 """
                 UPDATE submissions SET status=?,project_story=?,requirement_notes=?,research_notes=?,
-                    design_notes=?,presentation_url=?,reflection=?,file_name=?,updated_at=?
-                WHERE id=? AND student_id=?
+                    design_notes=?,presentation_url=?,reflection=?,file_name=?,submitted_at=?,
+                    revision_number=?,updated_at=? WHERE id=? AND student_id=?
                 """,
-                (status, project_story, requirement_notes, research_notes, design_notes, presentation_url,
-                 reflection, file_name, now_iso(), submission["id"], user["id"]),
+                (
+                    status, project_story, requirement_notes, research_notes, design_notes,
+                    presentation_url, reflection, file_name, submitted_at, revision_number,
+                    now, submission["id"], user["id"],
+                ),
             )
         else:
             execute(
                 """
                 INSERT INTO submissions(student_id,week_number,status,project_story,requirement_notes,
-                    research_notes,design_notes,presentation_url,reflection,file_name,updated_at)
-                VALUES (?,?,?,?,?,?,?,?,?,?,?)
+                    research_notes,design_notes,presentation_url,reflection,file_name,submitted_at,
+                    revision_number,updated_at)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
                 """,
-                (user["id"], week_number, status, project_story, requirement_notes, research_notes,
-                 design_notes, presentation_url, reflection, file_name, now_iso()),
+                (
+                    user["id"], week_number, status, project_story, requirement_notes,
+                    research_notes, design_notes, presentation_url, reflection, file_name,
+                    submitted_at, revision_number, now,
+                ),
             )
         flash("Week submitted for review." if status == "submitted" else "Draft saved.", "success")
         return redirect(request.url)
@@ -504,7 +544,10 @@ def student_week(week_number):
 @login_required
 def uploaded_file(filename):
     user = current_user()
-    row = query_one("SELECT s.*,u.selected_instructor_id FROM submissions s JOIN users u ON u.id=s.student_id WHERE s.file_name=?", (filename,))
+    row = query_one(
+        "SELECT s.*,u.selected_instructor_id FROM submissions s JOIN users u ON u.id=s.student_id WHERE s.file_name=?",
+        (filename,),
+    )
     if not row:
         abort(404)
     if user["role"] == "student" and row["student_id"] != user["id"]:
@@ -582,7 +625,8 @@ def instructor_students():
     user = current_user()
     sql = """
         SELECT u.*,COUNT(s.id) AS submission_count,
-               SUM(CASE WHEN s.status='approved' THEN 1 ELSE 0 END) AS approved_weeks
+               SUM(CASE WHEN s.status='approved' THEN 1 ELSE 0 END) AS approved_weeks,
+               ROUND(AVG(CASE WHEN s.status='approved' THEN s.total_score END),1) AS average_score
         FROM users u LEFT JOIN submissions s ON s.student_id=u.id
         WHERE u.role='student' AND u.approval_status='approved'
     """
@@ -594,10 +638,36 @@ def instructor_students():
     return render_template("instructor_students.html", students=query_all(sql, params))
 
 
+@app.route("/instructor/student/<int:student_id>")
+@instructor_required
+def student_progress(student_id):
+    user = current_user()
+    if not user_can_access_student(student_id, user):
+        abort(403)
+    student = query_one(
+        """
+        SELECT s.*,i.name AS instructor_name FROM users s
+        LEFT JOIN users i ON i.id=s.selected_instructor_id
+        WHERE s.id=? AND s.role='student'
+        """,
+        (student_id,),
+    )
+    if not student:
+        abort(404)
+    submissions = query_all("SELECT * FROM submissions WHERE student_id=? ORDER BY week_number", (student_id,))
+    by_week = {row["week_number"]: row for row in submissions}
+    approved_scores = [row["total_score"] for row in submissions if row["status"] == "approved" and row["total_score"] is not None]
+    average_score = round(sum(approved_scores) / len(approved_scores), 1) if approved_scores else None
+    return render_template("student_progress.html", student=student, by_week=by_week, average_score=average_score)
+
+
 @app.route("/instructor/reviews")
 @instructor_required
 def reviews():
     user = current_user()
+    status = request.args.get("status", "").strip()
+    student_id = request.args.get("student_id", "").strip()
+    week_number = request.args.get("week", "").strip()
     sql = """
         SELECT s.*,u.name AS student_name FROM submissions s JOIN users u ON u.id=s.student_id
         WHERE s.status IN ('submitted','under_review','revision','approved')
@@ -606,8 +676,30 @@ def reviews():
     if not user["is_admin"]:
         sql += " AND u.selected_instructor_id=?"
         params.append(user["id"])
+    if status in {"submitted", "under_review", "revision", "approved"}:
+        sql += " AND s.status=?"
+        params.append(status)
+    if student_id.isdigit():
+        sql += " AND s.student_id=?"
+        params.append(int(student_id))
+    if week_number.isdigit() and 1 <= int(week_number) <= 8:
+        sql += " AND s.week_number=?"
+        params.append(int(week_number))
     sql += " ORDER BY CASE s.status WHEN 'submitted' THEN 1 WHEN 'under_review' THEN 2 WHEN 'revision' THEN 3 ELSE 4 END,s.updated_at DESC"
-    return render_template("reviews.html", submissions=query_all(sql, params))
+    student_sql = "SELECT id,name FROM users WHERE role='student' AND approval_status='approved'"
+    student_params = []
+    if not user["is_admin"]:
+        student_sql += " AND selected_instructor_id=?"
+        student_params.append(user["id"])
+    student_sql += " ORDER BY name"
+    return render_template(
+        "reviews.html",
+        submissions=query_all(sql, params),
+        students=query_all(student_sql, student_params),
+        selected_status=status,
+        selected_student=student_id,
+        selected_week=week_number,
+    )
 
 
 @app.route("/instructor/review/<int:submission_id>", methods=["GET", "POST"])
@@ -629,10 +721,41 @@ def review_submission(submission_id):
         status = request.form.get("status", "under_review")
         if status not in {"under_review", "revision", "approved"}:
             abort(400)
+        try:
+            scores = {
+                "business": parse_score("score_business"),
+                "evidence": parse_score("score_evidence"),
+                "salesforce": parse_score("score_salesforce"),
+                "communication": parse_score("score_communication"),
+                "professionalism": parse_score("score_professionalism"),
+            }
+        except ValueError as exc:
+            flash(str(exc), "danger")
+            return redirect(request.url)
+        if status in {"revision", "approved"} and any(value is None for value in scores.values()):
+            flash("Complete all five rubric scores before requiring revision or approving the week.", "danger")
+            return redirect(request.url)
         feedback = request.form.get("instructor_feedback", "").strip()
-        execute("UPDATE submissions SET status=?,instructor_feedback=?,reviewed_by=?,reviewed_at=?,updated_at=? WHERE id=?",
-                (status, feedback, user["id"], now_iso(), now_iso(), submission_id))
-        flash("Review saved.", "success")
+        strengths = request.form.get("strengths", "").strip()
+        revision_actions = request.form.get("revision_actions", "").strip()
+        if status == "revision" and not revision_actions:
+            flash("List the specific revision actions the student must complete.", "danger")
+            return redirect(request.url)
+        total_score = round(sum(value for value in scores.values() if value is not None), 1) if any(value is not None for value in scores.values()) else None
+        execute(
+            """
+            UPDATE submissions SET status=?,score_business=?,score_evidence=?,score_salesforce=?,
+                score_communication=?,score_professionalism=?,total_score=?,strengths=?,
+                revision_actions=?,instructor_feedback=?,reviewed_by=?,reviewed_at=?,updated_at=?
+            WHERE id=?
+            """,
+            (
+                status, scores["business"], scores["evidence"], scores["salesforce"],
+                scores["communication"], scores["professionalism"], total_score,
+                strengths, revision_actions, feedback, user["id"], now_iso(), now_iso(), submission_id,
+            ),
+        )
+        flash("Grade and feedback saved.", "success")
         return redirect(request.url)
     return render_template("review_submission.html", row=row, week=WEEKS[row["week_number"] - 1])
 

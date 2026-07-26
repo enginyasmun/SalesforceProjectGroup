@@ -1,20 +1,60 @@
 {% extends 'base.html' %}
 {% block title %}Week {{ week.number }} | Salesforce Project Group{% endblock %}
 {% block content %}
-<section class="page-header week-heading"><span class="eyebrow">Week {{ week.number }} · {{ week.phase }}</span><h1>{{ week.title }}</h1><p>{{ week.focus }}</p><div class="interview-callout"><small>Interview connection</small><strong>{{ week.interview }}</strong><p>{{ week.prompt }}</p></div></section>
-<section class="content-grid">
-  <aside class="lesson-panel"><h2>What you will learn</h2><ul class="check-list">{% for topic in week.topics %}<li>{{ topic }}</li>{% endfor %}</ul><h2>Required deliverables</h2><ol>{% for item in week.deliverables %}<li>{{ item }}</li>{% endfor %}</ol>{% if week.number in [4,7] %}<a class="text-link" href="{{ url_for('samples') }}">Study the presentation samples →</a>{% endif %}</aside>
-  <form class="submission-form" method="post" enctype="multipart/form-data">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-    <label>Project story or weekly answer<textarea name="project_story" rows="6" placeholder="Write the clearest version of your answer...">{{ submission.project_story if submission else '' }}</textarea></label>
-    <label>Requirement understanding<textarea name="requirement_notes" rows="5" placeholder="Business problem, users, constraints, acceptance criteria...">{{ submission.requirement_notes if submission else '' }}</textarea></label>
-    <label>Research evidence<textarea name="research_notes" rows="5" placeholder="Sources, findings, options, trade-offs...">{{ submission.research_notes if submission else '' }}</textarea></label>
-    <label>Solution or build-planning notes<textarea name="design_notes" rows="5" placeholder="Data, security, automation, testing, risks...">{{ submission.design_notes if submission else '' }}</textarea></label>
-    <label>Presentation or document link<input type="url" name="presentation_url" value="{{ submission.presentation_url if submission else '' }}" placeholder="Google Slides, Drive, GitHub, or portfolio URL"></label>
-    <label>Reflection<textarea name="reflection" rows="4" placeholder="What improved? What remains difficult?">{{ submission.reflection if submission else '' }}</textarea></label>
-    <label>Supporting file<input type="file" name="file"><small>PDF, Word, PowerPoint, image, text, or ZIP. Maximum 12 MB.</small></label>
-    {% if submission and submission.instructor_feedback %}<div class="feedback-box"><small>Instructor feedback</small><p>{{ submission.instructor_feedback }}</p></div>{% endif %}
-    <div class="form-actions"><button class="button button-quiet" type="submit" name="action" value="draft">Save draft</button><button class="button" type="submit" name="action" value="submit">Submit for review</button></div>
-  </form>
+<a class="breadcrumb" href="{{ url_for('student_dashboard') }}">← Back to my program</a>
+{% include '_week_guide.html' %}
+
+<section class="submission-section" id="submit-work">
+  <div class="section-heading"><span class="eyebrow">Submit Week {{ week.number }}</span><h2>Turn the guided work into evidence your instructor can review.</h2><p>Use the fields that best match this week. The main weekly answer is required when submitting.</p></div>
+  <div class="submission-layout">
+    <aside class="submission-status-card">
+      <span class="eyebrow">Current status</span>
+      <span class="status-pill large {{ submission.status if submission else 'not-started' }}">{{ (submission.status|replace('_',' ')|title) if submission else 'Not started' }}</span>
+      {% if submission %}
+        <dl><dt>Updated</dt><dd>{{ submission.updated_at[:10] }}</dd><dt>Revision</dt><dd>{{ submission.revision_number }}</dd><dt>Score</dt><dd>{{ submission.total_score|round(1) if submission.total_score is not none else 'Not graded' }}</dd></dl>
+        {% if submission.strengths %}<div class="feedback-mini"><strong>Strengths</strong><p>{{ submission.strengths }}</p></div>{% endif %}
+        {% if submission.revision_actions %}<div class="feedback-mini revision-note"><strong>Required revisions</strong><p>{{ submission.revision_actions }}</p></div>{% endif %}
+        {% if submission.instructor_feedback %}<div class="feedback-mini"><strong>Instructor coaching</strong><p>{{ submission.instructor_feedback }}</p></div>{% endif %}
+      {% else %}<p>Complete the study steps above, then save a draft or submit the work.</p>{% endif %}
+    </aside>
+
+    <form class="submission-form" method="post" enctype="multipart/form-data">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <label>Main weekly answer <span class="required-mark">Required to submit</span><textarea name="project_story" rows="8" placeholder="Answer the interview question and explain your work, decisions, evidence, and learning...">{{ submission.project_story if submission else '' }}</textarea></label>
+      <label>Requirement and business understanding<textarea name="requirement_notes" rows="6" placeholder="Business problem, users, stakeholders, process, scope, constraints, acceptance criteria...">{{ submission.requirement_notes if submission else '' }}</textarea></label>
+      <label>Research and evidence<textarea name="research_notes" rows="6" placeholder="Sources, findings, comparisons, examples, evidence, limitations...">{{ submission.research_notes if submission else '' }}</textarea></label>
+      <label>Salesforce solution reasoning<textarea name="design_notes" rows="6" placeholder="Data, security, automation, integration, testing, delivery, trade-offs...">{{ submission.design_notes if submission else '' }}</textarea></label>
+      <label>Presentation, recording, document, or portfolio link<input type="url" name="presentation_url" value="{{ submission.presentation_url if submission else '' }}" placeholder="Google Slides, Drive, GitHub, recording, or portfolio URL"></label>
+      <label>Reflection and next improvement<textarea name="reflection" rows="5" placeholder="What improved? What remains difficult? What will you change next?">{{ submission.reflection if submission else '' }}</textarea></label>
+      <label>Supporting file<input type="file" name="file"><small>PDF, Word, PowerPoint, image, text, or ZIP. Maximum 12 MB.</small></label>
+      {% if submission and submission.file_name %}<a class="text-link" href="{{ url_for('uploaded_file', filename=submission.file_name) }}">Download the current attachment →</a>{% endif %}
+      <div class="form-actions">
+        {% if submission and submission.status == 'approved' %}<span class="approved-lock">Approved work is locked. Ask your instructor to reopen it if a change is needed.</span>{% else %}<button class="button button-quiet" type="submit" name="action" value="draft">Save draft</button><button class="button" type="submit" name="action" value="submit">Submit for review</button>{% endif %}
+      </div>
+    </form>
+  </div>
 </section>
+{% endblock %}
+{% block scripts %}
+<script>
+(() => {
+  const guide = document.querySelector('[data-guide]');
+  if (!guide) return;
+  const key = `project-group-${guide.dataset.guide}`;
+  const checks = [...guide.querySelectorAll('[data-step-check]')];
+  const saved = JSON.parse(localStorage.getItem(key) || '[]');
+  checks.forEach((box, index) => box.checked = Boolean(saved[index]));
+  const update = () => {
+    const state = checks.map(box => box.checked);
+    localStorage.setItem(key, JSON.stringify(state));
+    const complete = state.filter(Boolean).length;
+    const text = guide.querySelector('[data-progress-text]');
+    const bar = guide.querySelector('[data-progress-bar]');
+    if (text) text.textContent = `${complete} of ${checks.length} steps`;
+    if (bar) bar.style.width = `${checks.length ? complete / checks.length * 100 : 0}%`;
+  };
+  checks.forEach(box => box.addEventListener('change', update));
+  update();
+})();
+</script>
 {% endblock %}

@@ -1,5 +1,50 @@
 {% extends 'base.html' %}
+{% block title %}Grade Week {{ row.week_number }} | Salesforce Project Group{% endblock %}
 {% block content %}
-<section class="page-header"><span class="eyebrow">Week {{ row.week_number }} review</span><h1>{{ row.student_name }} · {{ week.title }}</h1><p>{{ week.interview }}</p></section>
-<section class="review-grid"><div class="review-evidence"><h2>Project story</h2><p>{{ row.project_story or 'No response.' }}</p><h2>Requirement notes</h2><p>{{ row.requirement_notes or 'No response.' }}</p><h2>Research evidence</h2><p>{{ row.research_notes or 'No response.' }}</p><h2>Solution notes</h2><p>{{ row.design_notes or 'No response.' }}</p><h2>Reflection</h2><p>{{ row.reflection or 'No response.' }}</p>{% if row.presentation_url %}<a class="button button-quiet" href="{{ row.presentation_url }}" target="_blank" rel="noopener">Open submitted link</a>{% endif %}{% if row.file_name %}<a class="button button-quiet" href="{{ url_for('uploaded_file', filename=row.file_name) }}">Download attachment</a>{% endif %}</div><form class="form-card sticky-card" method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><label>Decision<select name="status"><option value="under_review" {% if row.status=='under_review' %}selected{% endif %}>Under review</option><option value="revision" {% if row.status=='revision' %}selected{% endif %}>Revision required</option><option value="approved" {% if row.status=='approved' %}selected{% endif %}>Approved</option></select></label><label>Instructor feedback<textarea name="instructor_feedback" rows="12" placeholder="Be specific about reasoning, evidence, and interview delivery...">{{ row.instructor_feedback or '' }}</textarea></label><button class="button" type="submit">Save review</button></form></section>
+<a class="breadcrumb" href="{{ url_for('reviews') }}">← Back to reviews</a>
+<section class="review-header">
+  <div><span class="eyebrow">Week {{ row.week_number }} review · Revision {{ row.revision_number }}</span><h1>{{ row.student_name }} · {{ week.title }}</h1><p>{{ week.interview }}</p></div>
+  <div class="review-header-score"><span class="status-pill large {{ row.status }}">{{ row.status|replace('_',' ')|title }}</span><strong>{{ row.total_score|round(1) if row.total_score is not none else '—' }}</strong><small>out of 100</small></div>
+</section>
+
+<section class="review-workspace">
+  <article class="review-evidence">
+    <div class="evidence-heading"><div><span class="eyebrow">Student submission</span><h2>Submitted evidence</h2></div><a class="text-link" href="{{ url_for('student_progress', student_id=row.student_id) }}">View full student progress →</a></div>
+    <dl class="submission-meta"><div><dt>Email</dt><dd>{{ row.student_email }}</dd></div><div><dt>Submitted</dt><dd>{{ row.submitted_at[:10] if row.submitted_at else 'Draft only' }}</dd></div><div><dt>Updated</dt><dd>{{ row.updated_at[:10] }}</dd></div></dl>
+    <section><span class="eyebrow">Main weekly answer</span><p>{{ row.project_story or 'No response.' }}</p></section>
+    <section><span class="eyebrow">Requirement and business understanding</span><p>{{ row.requirement_notes or 'No response.' }}</p></section>
+    <section><span class="eyebrow">Research and evidence</span><p>{{ row.research_notes or 'No response.' }}</p></section>
+    <section><span class="eyebrow">Salesforce solution reasoning</span><p>{{ row.design_notes or 'No response.' }}</p></section>
+    <section><span class="eyebrow">Reflection</span><p>{{ row.reflection or 'No response.' }}</p></section>
+    <div class="resource-actions">{% if row.presentation_url %}<a class="button button-quiet" href="{{ row.presentation_url }}" target="_blank" rel="noopener">Open submitted link</a>{% endif %}{% if row.file_name %}<a class="button button-quiet" href="{{ url_for('uploaded_file', filename=row.file_name) }}">Download attachment</a>{% endif %}</div>
+  </article>
+
+  <form class="grading-card" method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <div><span class="eyebrow">Instructor grading</span><h2>100-point rubric</h2><p>Score each category from 0 to 20.</p></div>
+    <div class="rubric-form">
+      {% for item in rubric %}
+      <label><span>{{ item.label }} <small>/20</small></span><p>{{ item.description }}</p><input type="number" min="0" max="20" step="0.5" name="score_{{ item.key }}" value="{{ row['score_' ~ item.key] if row['score_' ~ item.key] is not none else '' }}" placeholder="0"></label>
+      {% endfor %}
+    </div>
+    <div class="calculated-total"><span>Calculated total</span><strong data-total-score>{{ row.total_score|round(1) if row.total_score is not none else 0 }}</strong><small>/100</small></div>
+    <label>Decision<select name="status"><option value="under_review" {% if row.status=='under_review' %}selected{% endif %}>Under review</option><option value="revision" {% if row.status=='revision' %}selected{% endif %}>Revision required</option><option value="approved" {% if row.status=='approved' %}selected{% endif %}>Approved</option></select></label>
+    <label>Strengths<textarea name="strengths" rows="5" placeholder="What is already strong and should be preserved?">{{ row.strengths or '' }}</textarea></label>
+    <label>Required revision actions<textarea name="revision_actions" rows="7" placeholder="List specific changes in priority order. Required when selecting Revision required.">{{ row.revision_actions or '' }}</textarea></label>
+    <label>Instructor coaching feedback<textarea name="instructor_feedback" rows="8" placeholder="Explain the reasoning, interview impact, and next practice step.">{{ row.instructor_feedback or '' }}</textarea></label>
+    <button class="button" type="submit">Save grade and feedback</button>
+    <p class="form-note">Only the student, selected instructor, and academy administrator can access this review.</p>
+  </form>
+</section>
+{% endblock %}
+{% block scripts %}
+<script>
+(() => {
+  const inputs = [...document.querySelectorAll('.rubric-form input[type="number"]')];
+  const total = document.querySelector('[data-total-score]');
+  const update = () => total.textContent = inputs.reduce((sum, input) => sum + (Number(input.value) || 0), 0).toFixed(1);
+  inputs.forEach(input => input.addEventListener('input', update));
+  update();
+})();
+</script>
 {% endblock %}

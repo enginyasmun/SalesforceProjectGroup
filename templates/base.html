@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css', v='2.0') }}">
 </head>
 <body>
   <header class="site-header">
@@ -20,9 +20,11 @@
       {% if current_user %}
         {% if current_user.role == 'student' and current_user.approval_status == 'approved' %}
           <a href="{{ url_for('student_dashboard') }}">My program</a>
+          <a href="{{ url_for('curriculum') }}">Curriculum</a>
           <a href="{{ url_for('samples') }}">Samples</a>
         {% elif current_user.role == 'instructor' %}
           <a href="{{ url_for('instructor_dashboard') }}">Overview</a>
+          <a href="{{ url_for('curriculum') }}">Curriculum</a>
           <a href="{{ url_for('approvals') }}">Approvals</a>
           <a href="{{ url_for('reviews') }}">Reviews</a>
           <a href="{{ url_for('instructor_students') }}">Students</a>
@@ -49,5 +51,6 @@
 
   <main>{% block content %}{% endblock %}</main>
   <footer><span>Salesforce Project Group</span><span>Understand · Research · Design · Present · Defend</span></footer>
+  {% block scripts %}{% endblock %}
 </body>
 </html>

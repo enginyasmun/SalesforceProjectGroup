@@ -1,0 +1,54 @@
+<section class="guide-hero">
+  <div class="guide-number"><strong>{{ '%02d'|format(week.number) }}</strong><span>Week of 8</span></div>
+  <div>
+    <span class="eyebrow">{{ week.phase }}</span>
+    <h1>{{ week.title }}</h1>
+    <p class="lead compact-lead">{{ week.focus }}</p>
+    <div class="guide-meta"><span>{{ week.estimated_time }}</span><span>{{ week.steps|length }} guided steps</span><span>{{ week.deliverables|length }} deliverables</span></div>
+  </div>
+</section>
+
+<section class="interview-strip">
+  <div><span class="eyebrow">Interview connection</span><h2>{{ week.interview }}</h2></div>
+  <p>{{ week.prompt }}</p>
+</section>
+
+<section class="guide-overview">
+  <article><span class="eyebrow">Learning objectives</span><ul class="check-list">{% for item in week.objectives %}<li>{{ item }}</li>{% endfor %}</ul></article>
+  <article><span class="eyebrow">Tools and materials</span><div class="tag-list">{% for item in week.tools %}<span>{{ item }}</span>{% endfor %}</div><span class="eyebrow spaced">Required deliverables</span><ol>{% for item in week.deliverables %}<li>{{ item }}</li>{% endfor %}</ol></article>
+</section>
+
+<section class="guided-study" data-guide="week-{{ week.number }}">
+  <header class="guided-study-header">
+    <div><span class="eyebrow light">Step-by-step study guide</span><h2>Follow the sequence. Check the result. Save the evidence.</h2><p>Complete every step in order before submitting the weekly work.</p></div>
+    <div class="guide-progress"><span>Study progress</span><strong data-progress-text>0 of {{ week.steps|length }} steps</strong><div class="progress-track"><i data-progress-bar></i></div></div>
+  </header>
+
+  <div class="guide-step-list">
+    {% for step in week.steps %}
+    <article class="guide-step" data-guide-step="{{ loop.index }}">
+      <div class="step-index"><span>{{ '%02d'|format(loop.index) }}</span><label><input type="checkbox" data-step-check="{{ loop.index }}"><i>✓</i><small>Done</small></label></div>
+      <details {% if loop.first %}open{% endif %}>
+        <summary><div><small>Step {{ loop.index }} of {{ week.steps|length }}</small><strong>{{ step.title }}</strong><p>{{ step.purpose }}</p></div><b>+</b></summary>
+        <div class="step-body">
+          <ol class="action-list">{% for action in step.actions %}<li>{{ action }}</li>{% endfor %}</ol>
+          <div class="verification-grid">
+            <article><span class="eyebrow">Check your work</span><h3>Expected checkpoint</h3><p>{{ step.checkpoint }}</p></article>
+            <article><span class="eyebrow">Save this evidence</span><h3>Required evidence</h3><p>{{ step.evidence }}</p></article>
+          </div>
+        </div>
+      </details>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="quality-section">
+  <div><span class="eyebrow">Weekly quality gate</span><h2>Do not submit until every statement is true.</h2></div>
+  <ul class="quality-list">{% for item in week.quality_gate %}<li>{{ item }}</li>{% endfor %}</ul>
+</section>
+
+<section class="rubric-section">
+  <div class="section-heading"><span class="eyebrow">How the work is graded</span><h2>Five categories. Twenty points each.</h2><p>Your instructor will score the work out of 100 and provide strengths, required revisions, and coaching feedback.</p></div>
+  <div class="rubric-grid">{% for item in rubric %}<article><span>{{ item.max_score }} points</span><h3>{{ item.label }}</h3><p>{{ item.description }}</p></article>{% endfor %}</div>
+</section>

@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block title %}Week {{ week.number }} Curriculum | Salesforce Project Group{% endblock %}
+{% block content %}
+<a class="breadcrumb" href="{{ url_for('curriculum') }}">← Back to curriculum</a>
+{% include '_week_guide.html' %}
+{% endblock %}
+{% block scripts %}
+<script>
+(() => {
+  const guide = document.querySelector('[data-guide]');
+  if (!guide) return;
+  const key = `project-group-${guide.dataset.guide}`;
+  const checks = [...guide.querySelectorAll('[data-step-check]')];
+  const saved = JSON.parse(localStorage.getItem(key) || '[]');
+  checks.forEach((box, index) => box.checked = Boolean(saved[index]));
+  const update = () => {
+    const state = checks.map(box => box.checked);
+    localStorage.setItem(key, JSON.stringify(state));
+    const complete = state.filter(Boolean).length;
+    const text = guide.querySelector('[data-progress-text]');
+    const bar = guide.querySelector('[data-progress-bar]');
+    if (text) text.textContent = `${complete} of ${checks.length} steps`;
+    if (bar) bar.style.width = `${checks.length ? complete / checks.length * 100 : 0}%`;
+  };
+  checks.forEach(box => box.addEventListener('change', update));
+  update();
+})();
+</script>
+{% endblock %}
