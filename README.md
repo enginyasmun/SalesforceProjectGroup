@@ -1,27 +1,67 @@
-# Salesforce Project Group v5.2 patch
+# Salesforce Project Group Portal v6.0
 
-This patch focuses on 3 things:
+A professional Flask portal for Salesforce bootcamp graduates and instructors.
 
-1. Better-designed HTML emails for students
-2. Fixes for the presentation request screen
-3. Weekly homework scheduling with start and due dates
+## Educational model
 
-## Files included
+Every week follows the same professional learning loop:
 
-- `static/v52-fixes.css`
-- `templates/manage_homework.html`
-- `templates/manage_week_schedule.html`
-- `templates/emails/base.html`
-- `templates/emails/homework_assigned.html`
-- `templates/emails/weekly_due_set.html`
-- `templates/emails/weekly_reviewed.html`
-- `templates/emails/homework_reviewed.html`
-- `templates/emails/account_approved.html`
-- `sql_v52_patch.sql`
-- `BACKEND_PATCH_NOTES.md`
+**Learn → Build → Prove → Explain → Defend → Improve**
 
-## Important
+Students complete two required weekly deliverables:
 
-This is a patch pack to apply on top of your current v5 codebase.
-The HTML templates and CSS are ready to upload.
-The backend notes explain the route, database, and notification additions needed in `app.py` and `seed.py`.
+1. Salesforce project implementation evidence
+2. A technical presentation that the student can defend
+
+Instructors approve both requirements separately and apply a 100-point rubric covering business understanding, evidence, Salesforce reasoning, communication, and professionalism.
+
+## Included workflows
+
+- Student registration and instructor approval
+- Instructor-scoped student access
+- Eight-week graduate curriculum
+- Nineteen-step HR Management Salesforce project
+- Project tasks, evidence, Definition of Done, and technical review questions
+- Weekly open dates, due dates, instructions, and overdue status
+- Project evidence and presentation submission
+- Separate review of both weekly requirements
+- Instructor-created presentation homework
+- Designed HTML email plus in-app notifications
+- Project, certification, blocker, cohort, and score tracking
+- Admin project and instructor management
+- Secure file authorization, CSRF protection, password hashing, and security headers
+- Safe SQLite migration of the existing production database
+- GitHub Actions validation and end-to-end smoke testing
+
+## Persistent production data
+
+Keep production data outside the Git checkout:
+
+```text
+/home/enginproject/project-group-data/project_group.db
+/home/enginproject/project-group-data/uploads
+/home/enginproject/project-group-data/avatars
+```
+
+The update process never replaces these folders.
+
+## Local validation
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+export SECRET_KEY="local-development-secret"
+export ADMIN_EMAIL="admin@example.com"
+export ADMIN_PASSWORD="A-Strong-Admin-Password"
+export COOKIE_SECURE="0"
+python seed.py
+python smoke_test.py
+python app.py
+```
+
+Open `http://127.0.0.1:5000`.
+
+## Production deployment
+
+Read [DEPLOY_PYTHONANYWHERE.md](DEPLOY_PYTHONANYWHERE.md) before replacing the current code.

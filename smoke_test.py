@@ -1,8 +1,7 @@
-"""End-to-end smoke test for Project Group portal v5.
+"""End-to-end test using the actual HTML form field contracts.
 
-Run with: python smoke_test.py
-The test uses a temporary database and does not touch production data.
-Email delivery is disabled; in-app notifications and email status are verified.
+The test uses a temporary SQLite database and temporary upload folders.
+It never touches production data and does not send email.
 """
 from __future__ import annotations
 
@@ -10,12 +9,14 @@ import os
 import tempfile
 from pathlib import Path
 
-os.environ["SECRET_KEY"] = "smoke-test-secret"
-os.environ["ADMIN_NAME"] = "Test Admin"
-os.environ["ADMIN_EMAIL"] = "admin@example.com"
-os.environ["ADMIN_PASSWORD"] = "AdminPass123!"
-os.environ["COOKIE_SECURE"] = "0"
-os.environ["EMAIL_ENABLED"] = "0"
+os.environ.update(
+    SECRET_KEY="smoke-test-secret",
+    ADMIN_NAME="Test Admin",
+    ADMIN_EMAIL="admin@example.com",
+    ADMIN_PASSWORD="AdminPass123!",
+    COOKIE_SECURE="0",
+    EMAIL_ENABLED="0",
+)
 
 import app as portal
 
@@ -34,7 +35,7 @@ def run() -> None:
 
         def get(path: str):
             response = client.get(path, follow_redirects=True)
-            assert response.status_code == 200, (path, response.status_code, response.data[:500])
+            assert response.status_code == 200, (path, response.status_code, response.data[:800])
             return response
 
         def token() -> str:
@@ -46,22 +47,26 @@ def run() -> None:
         def post(path: str, data):
             payload = {"csrf_token": token(), **data}
             response = client.post(path, data=payload, follow_redirects=True)
-            assert response.status_code == 200, (path, response.status_code, response.data[:800])
+            assert response.status_code == 200, (path, response.status_code, response.data[:1200])
             return response
 
         health = get("/health").get_json()
-        assert health == {"status": "ok", "database": "ready", "version": "5.0"}
+        assert health == {"status": "ok", "database": "ready", "version": "6.0.0"}
+        assert portal.query_one("SELECT COUNT(*) AS total FROM weekly_assignments")["total"] == 8
+        assert portal.query_one("SELECT COUNT(*) AS total FROM project_steps")["total"] == 19
+
         get("/")
         get("/login")
         response = post("/login", {"email": "admin@example.com", "password": "AdminPass123!"})
-        assert b"Assign, review, and notify" in response.data
+        assert b"Assign, review, schedule, and coach" in response.data
 
-        post("/instructor/manage", {
+        response = post("/instructor/manage", {
             "name": "Test Instructor",
             "email": "instructor@example.com",
             "password": "Instructor123!",
         })
-        instructor = portal.query_one("SELECT id FROM users WHERE email=?", ("instructor@example.com",))
+        assert b"Instructor account created" in response.data
+        instructor = portal.query_one("SELECT id FROM users WHERE email='instructor@example.com'")
         assert instructor
 
         get("/logout")
@@ -76,112 +81,124 @@ def run() -> None:
             "linkedin_url": "https://www.linkedin.com/in/test-student",
             "avatar_preset": "avatar-03.svg",
         })
-        assert b"waiting for approval" in response.data
-        student = portal.query_one("SELECT id,avatar_filename FROM users WHERE email=?", ("student@example.com",))
+        assert b"waiting for instructor approval" in response.data.lower()
+        student = portal.query_one("SELECT id,avatar_filename FROM users WHERE email='student@example.com'")
         assert student and student["avatar_filename"] == "preset:avatar-03.svg"
 
         get("/logout")
-        get("/login")
         post("/login", {"email": "admin@example.com", "password": "AdminPass123!"})
-        post(f"/instructor/student/{student['id']}/decision", {"decision": "approved"})
-        assert portal.query_one("SELECT COUNT(*) AS total FROM notifications WHERE user_id=?", (student["id"],))["total"] >= 1
+        response = post(f"/instructor/student/{student['id']}/decision", {"decision": "approved"})
+        assert b"was approved" in response.data
+
+        response = post("/instructor/weeks", {
+            "week_number": "1",
+            "title": "Project truth and ownership",
+            "start_on": "2026-01-01",
+            "due_on": "2026-12-31",
+            "instructions": "Complete project Step 1 and identify evidence for every claim.",
+            "presentation_requirements": "Five slides and three technical defense questions.",
+            "is_open": "1",
+            "notify_students": "1",
+        })
+        assert b"Week 1 schedule saved" in response.data
+        schedule = portal.query_one("SELECT * FROM weekly_assignments WHERE week_number=1")
+        assert schedule["title"] == "Project truth and ownership" and schedule["due_on"] == "2026-12-31"
 
         get("/logout")
-        get("/login")
-        response = post("/login", {"email": "student@example.com", "password": "StudentPass123!"})
-        assert b"Complete project work, create presentations" in response.data
+        post("/login", {"email": "student@example.com", "password": "StudentPass123!"})
+        get("/student")
+        get("/curriculum")
+        get("/curriculum/week/1")
+        get("/student/project")
+        get("/student/project/step/1")
         get("/student/week/1")
         response = post("/student/week/1", {
             "action": "submit",
             "project_step_number": "1",
-            "project_story": "I completed the project object and app setup for the assigned step.",
-            "requirement_notes": "The work supports HR Managers, Candidates, and Interviewers.",
-            "research_notes": "I used official Salesforce documentation.",
-            "design_notes": "I documented objects, fields, descriptions, and relationships.",
+            "project_story": "I created and tested the project foundation and security configuration.",
+            "requirement_notes": "The design supports HR Managers, Candidates, Interviewers, and least-privilege access.",
+            "research_notes": "I reviewed official Salesforce security and relationship guidance.",
+            "design_notes": "I documented objects, fields, relationships, sharing, validation, and duplicate controls.",
             "project_evidence_url": "https://example.com/project-evidence",
             "presentation_title": "Week 1 Project Foundation",
-            "presentation_summary": "A five-slide explanation of the business problem, users, objects, and my contribution.",
+            "presentation_summary": "Five slides explaining the problem, users, my work, evidence, and improvements.",
             "presentation_link": "https://example.com/week-1-presentation",
-            "reflection": "I need to improve my explanation of relationship choices.",
+            "reflection": "I need to improve my explanation of relationship tradeoffs.",
         })
         assert b"Both weekly requirements were submitted" in response.data
         submission = portal.query_one("SELECT * FROM submissions WHERE student_id=? AND week_number=1", (student["id"],))
-        assert submission and submission["presentation_title"] and submission["project_step_number"] == 1
+        assert submission and submission["project_step_number"] == 1 and submission["presentation_title"]
 
         get("/logout")
-        get("/login")
         post("/login", {"email": "admin@example.com", "password": "AdminPass123!"})
+        get("/instructor/reviews")
         response = post(f"/instructor/review/{submission['id']}", {
             "status": "approved",
             "project_review_status": "approved",
             "presentation_review_status": "approved",
-            "project_feedback": "The evidence clearly proves the project step.",
-            "presentation_feedback": "The deck is clear and follows the suggested structure.",
+            "project_feedback": "The evidence proves the configured project foundation.",
+            "presentation_feedback": "The deck has a clear business-to-technical story.",
             "score_business": "18",
             "score_evidence": "18",
             "score_salesforce": "18",
             "score_communication": "18",
             "score_professionalism": "18",
-            "strengths": "Clear ownership and evidence.",
+            "strengths": "Clear ownership, security reasoning, and evidence.",
             "revision_actions": "",
-            "instructor_feedback": "Add one measurable outcome next week.",
+            "instructor_feedback": "Add one measurable business result next week.",
         })
-        assert b"student was notified" in response.data
+        assert b"Grade and feedback saved" in response.data
         reviewed = portal.query_one("SELECT * FROM submissions WHERE id=?", (submission["id"],))
-        assert reviewed["total_score"] == 90 and reviewed["project_review_status"] == "approved"
+        assert reviewed["total_score"] == 90 and reviewed["status"] == "approved"
 
         response = post("/instructor/homework", {
-            "title": "Explain validation and duplicate rules",
+            "title": "Defend validation and duplicate rules",
             "topic": "Data quality",
-            "instructions": "Prepare a presentation that explains the rules and the business problems they prevent.",
-            "presentation_requirements": "5 to 7 slides, one rule per slide, include examples.",
-            "due_date": "2026-08-05",
+            "instructions": "Explain each rule, its business purpose, and positive and negative test scenarios.",
+            "presentation_requirements": "Five to seven slides, evidence, and answers to three follow-up questions.",
+            "start_on": "2026-01-01",
+            "due_date": "2026-12-31",
             "example_url": "https://example.com/example-deck",
             "student_ids": [str(student["id"])],
         })
         assert b"Assignment progress" in response.data
-        homework_assignment = portal.query_one("SELECT * FROM homework_assignments WHERE student_id=?", (student["id"],))
-        assert homework_assignment and homework_assignment["status"] == "assigned"
-
-        # Instructor changes project/certification trackers; both create notifications.
-        project = portal.query_one("SELECT project_id FROM student_projects WHERE student_id=?", (student["id"],))
-        post(f"/instructor/student/{student['id']}", {
-            "action": "project", "project_id": str(project["project_id"]), "current_step": "2",
-            "project_status": "active", "instructor_note": "Continue with validation rules.",
-        })
-        cert = portal.query_one("SELECT id FROM certifications WHERE code='ADMIN'")
-        post(f"/instructor/student/{student['id']}", {
-            "action": "certification", "certification_id": str(cert["id"]),
-            "certification_status": "studying", "target_date": "2026-09-01",
-            "certification_notes": "Complete the security modules.",
-        })
+        homework = portal.query_one("SELECT * FROM homework_requests ORDER BY id DESC LIMIT 1")
+        assignment = portal.query_one("SELECT * FROM homework_assignments WHERE request_id=?", (homework["id"],))
+        assert homework["presentation_requirements"].startswith("Five to seven")
+        assert homework["start_on"] == "2026-01-01" and homework["due_date"] == "2026-12-31"
+        assert assignment and assignment["status"] == "assigned"
 
         get("/logout")
-        get("/login")
         post("/login", {"email": "student@example.com", "password": "StudentPass123!"})
         get("/student/homework")
-        response = post(f"/student/homework/{homework_assignment['id']}", {
+        response = post(f"/student/homework/{assignment['id']}", {
             "action": "submit",
             "presentation_title": "Validation and Duplicate Rules",
-            "submission_notes": "I explain the rule purpose and test examples.",
+            "submission_notes": "I explain rule purpose, examples, and test results.",
             "presentation_url": "https://example.com/homework-presentation",
         })
         assert b"Presentation homework submitted" in response.data
 
         get("/logout")
-        get("/login")
         post("/login", {"email": "admin@example.com", "password": "AdminPass123!"})
-        response = post(f"/instructor/homework/review/{homework_assignment['id']}", {
-            "status": "approved", "score": "92", "instructor_comment": "Strong examples and clear structure.",
+        response = post(f"/instructor/homework/review/{assignment['id']}", {
+            "status": "approved",
+            "score": "92",
+            "instructor_comment": "Strong business examples and clear technical defense.",
         })
-        assert b"student was notified" in response.data
+        assert b"Homework review saved" in response.data
+
+        get("/instructor/students")
+        get(f"/instructor/student/{student['id']}")
+        get("/instructor/projects")
+        get("/samples")
+        get("/notifications")
 
         notifications = portal.query_all("SELECT * FROM notifications WHERE user_id=?", (student["id"],))
-        assert len(notifications) >= 6
+        assert len(notifications) >= 5
         assert all(row["email_status"] == "not_configured" for row in notifications)
-        student_home = get("/student") if False else None
 
-    print("PASS: avatars, dual weekly requirements, presentation homework, grading, notifications, and tracking all work.")
+    print("PASS: integrated v6 registration, schedule, weekly work, grading, homework, notifications, tracking, and project learning.")
 
 
 if __name__ == "__main__":

@@ -1,5 +1,8 @@
-from app import ensure_schema
+"""Initialize or safely migrate the Project Group database."""
 
-if __name__ == "__main__":
-    ensure_schema()
-    print("Project Group database is ready.")
+import app as portal
+
+portal._SCHEMA_READY = False
+portal.ensure_schema()
+print(f"Database ready: {portal.DB_PATH}")
+print(f"Application version: {portal.APP_VERSION}")
