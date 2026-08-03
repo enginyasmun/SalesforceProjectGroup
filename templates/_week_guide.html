@@ -1,5 +1,1 @@
-<section class="week-guide">
-  <div class="guide-intro"><span class="eyebrow">Interview connection</span><h2>{{ week.interview }}</h2><p>{{ week.focus }}</p></div>
-  <div class="guide-steps">{% for item in week.steps %}<details class="guide-step" {% if loop.first %}open{% endif %}><summary><span>{{ '%02d'|format(loop.index) }}</span><div><strong>{{ item.title }}</strong><small>{{ item.output }}</small></div><b>+</b></summary><div class="guide-step-body"><ol>{% for action in item.actions %}<li>{{ action }}</li>{% endfor %}</ol><div class="output-box"><span>Required output</span><strong>{{ item.output }}</strong></div></div></details>{% endfor %}</div>
-  <aside class="quality-gate"><div><span class="eyebrow">Before you submit</span><h3>Check every statement.</h3></div><ul>{% for item in week.quality_gate %}<li>{{ item }}</li>{% endfor %}</ul></aside>
-</section>
+<section class="learning-loop">{% for item in week.steps %}<article class="card loop-card"><span>{{ '%02d'|format(loop.index) }}</span><div><small>{{ item.title }}</small><ul>{% for action in item.actions %}<li>{{ action }}</li>{% endfor %}</ul><strong>Output: {{ item.output }}</strong></div></article>{% endfor %}</section>

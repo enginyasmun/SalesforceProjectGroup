@@ -1,18 +1,1 @@
-{% extends 'emails/base.html' %}
-{% block email_content %}
-<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-top:8px;">
-  <tr>
-    <td style="padding:18px;background:#f0ebff;border:1px solid #ddd0ff;border-radius:16px;">
-      <div style="font-size:13px;color:#584180;font-weight:800;margin-bottom:10px;">Presentation homework review</div>
-      <div style="font-size:24px;font-weight:800;margin-bottom:6px;">{{ title }}</div>
-      <div style="font-size:15px;color:#60655c;line-height:1.6;">Status: <strong>{{ review_status }}</strong>{% if score is not none %} · Score: <strong>{{ score }}</strong>{% endif %}</div>
-    </td>
-  </tr>
-</table>
-{% if feedback %}
-<div style="margin-top:18px;">
-  <div style="font-weight:800;margin-bottom:6px;">Instructor comments</div>
-  <div style="color:#60655c;line-height:1.7;white-space:pre-wrap;">{{ feedback }}</div>
-</div>
-{% endif %}
-{% endblock %}
+{% extends 'emails/base.html' %}{% block email_content %}<p style="margin:0;color:#697062">Hello {{ student_name }},</p><h1 style="font-size:30px;margin:12px 0">Your presentation homework was reviewed.</h1><p style="font-size:18px"><strong>Status:</strong> {{ review_status }}{% if score is not none %} · <strong>Score:</strong> {{ score }}/100{% endif %}</p>{% if comment %}<h3>Instructor comment</h3><p style="white-space:pre-wrap;line-height:1.65">{{ comment }}</p>{% endif %}{% endblock %}
